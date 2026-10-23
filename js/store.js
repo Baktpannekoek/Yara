@@ -1,8 +1,8 @@
-/* Opslag op het apparaat zelf: instellingen en stemopnames in IndexedDB.
+/* Opslag op het apparaat zelf: instellingen, stemopnames en foto's in IndexedDB.
    Niets verlaat het apparaat. */
 
 const DB_NAME = 'yara-wereld';
-const DB_VERSION = 1;
+const DB_VERSION = 2;   // 1: settings en recordings. 2: photos erbij.
 let dbPromise = null;
 
 function openDb() {
@@ -10,12 +10,20 @@ function openDb() {
   dbPromise = new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onupgradeneeded = () => {
+      // Draait bij een nieuwe installatie en bij een versiesprong. Stores die er al zijn blijven staan.
       const db = req.result;
       if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings');
       if (!db.objectStoreNames.contains('recordings')) db.createObjectStore('recordings');
+      if (!db.objectStoreNames.contains('photos')) db.createObjectStore('photos', { keyPath: 'id' });
     };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    req.onblocked = () => console.warn('Database-upgrade wacht tot een ander tabblad de app sluit');
+    req.onsuccess = () => {
+      const db = req.result;
+      // Een nieuwere versie in een ander tabblad: deze verbinding loslaten, de volgende aanroep opent opnieuw
+      db.onversionchange = () => { db.close(); dbPromise = null; };
+      resolve(db);
+    };
+    req.onerror = () => { dbPromise = null; reject(req.error); };
   });
   return dbPromise;
 }
@@ -60,6 +68,8 @@ export async function setSetting(key, value) {
   try { await tx('settings', 'readwrite', (s) => s.put(value, key)); } catch (e) { console.warn(e); }
 }
 
+/* ---------- Stemopnames ---------- */
+
 export async function putRecording(key, blob) {
   return tx('recordings', 'readwrite', (s) => s.put({ blob, type: blob.type, at: Date.now() }, key));
 }
@@ -72,8 +82,29 @@ export async function deleteRecording(key) {
 export async function listRecordingKeys() {
   try { return await tx('recordings', 'readonly', (s) => s.getAllKeys()); } catch { return []; }
 }
+
+/* ---------- Foto's van eigen spullen ----------
+   Een foto is { id, name, key, blob, at }. key is de sleutel van de bijbehorende stemopname. */
+
+export async function putPhoto(photo) {
+  return tx('photos', 'readwrite', (s) => s.put(photo));
+}
+export async function deletePhoto(id) {
+  return tx('photos', 'readwrite', (s) => s.delete(id));
+}
+export async function listPhotos() {
+  try {
+    const all = await tx('photos', 'readonly', (s) => s.getAll());
+    return (all || []).filter((p) => p && p.blob).sort((a, b) => (a.at || 0) - (b.at || 0));
+  } catch (e) {
+    console.warn("Foto's niet geladen", e);
+    return [];
+  }
+}
+
 export async function clearAll() {
   await tx('recordings', 'readwrite', (s) => s.clear());
+  await tx('photos', 'readwrite', (s) => s.clear());
   await tx('settings', 'readwrite', (s) => s.clear());
   cache = { ...DEFAULTS, scenes: { ...DEFAULTS.scenes } };
 }

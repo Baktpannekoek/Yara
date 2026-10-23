@@ -83,3 +83,26 @@ export function recordableItems(childName) {
   groups.push({ title: 'Gezichtje', items: FACE_PARTS.map((p) => ({ key: p.key, label: p.name, text: p.name })) });
   return groups;
 }
+
+/* ---------- Mijn spullen: foto's die een ouder heeft toegevoegd ---------- */
+
+export const PHOTO_CHAPTER = { key: 'spullen', icon: 'camera', title: 'Mijn spullen' };
+
+/* De sleutel van de stemopname bij een foto is de naam zelf, zonder hoofdletters en losse spaties.
+   Heet de foto "beer", dan deelt hij de opname met het woord beer uit het prentenboek. */
+export function photoKey(name) {
+  return String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+/* Het vijfde hoofdstuk, opgebouwd uit de opgeslagen foto's. Elke foto heeft hier al een url. */
+export function photoChapter(photos) {
+  return {
+    ...PHOTO_CHAPTER,
+    words: photos.map((p) => ({ key: p.key || photoKey(p.name), name: p.name, fx: 'chime', photo: p }))
+  };
+}
+
+/* Hoort een opnamesleutel bij een vast woord uit de app? Dan blijft de opname staan als een foto weggaat. */
+export function isBuiltinKey(key) {
+  return recordableItems('').some((g) => g.items.some((it) => it.key === key));
+}

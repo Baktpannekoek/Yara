@@ -85,6 +85,15 @@ export function faceIcon() {
     ${eyes(38, 62, 52)}${smile(50, 64, 14)}${cheeks(30, 70, 62)}`);
 }
 
+export function cameraIcon() {
+  return svg(`<rect x="34" y="18" width="32" height="18" rx="9" fill="#a7e6d7" ${SW}/>
+    <rect x="8" y="30" width="84" height="56" rx="16" fill="#a7e6d7" ${SW}/>
+    <circle cx="50" cy="58" r="19" fill="#fff7e6" ${SW}/>
+    <circle cx="50" cy="58" r="11" fill="#8fcbea" ${SW}/>
+    <circle cx="45" cy="53" r="3.5" fill="#fff"/>
+    <circle cx="78" cy="43" r="4.5" fill="#f7a8c4" ${SW}/>`);
+}
+
 /* ---------- Muziekvormen ---------- */
 
 export function shape(kind, color) {
@@ -359,7 +368,7 @@ export function face() {
 
 /* Opzoeken op naam, voor het prentenboek en de boerderij */
 const ART = { koe, hond, kat, eend, schaap, paard, kip, varken, kikker, vogel, vlinder,
-  appel, banaan, brood, melk, koekje, bal, auto, boek, schoen, beer, bad, bed, boom, bloem, zon: () => sun(true), maan: moon };
+  appel, banaan, brood, melk, koekje, bal, auto, boek, schoen, beer, bad, bed, boom, bloem, zon: () => sun(true), maan: moon, camera: cameraIcon };
 
 export function byName(name) {
   const fn = ART[name];

@@ -26,6 +26,7 @@ Gebruik "Begeleide toegang" van iOS.
 - **Muziekhoek**: zes vormen met tonen die altijd mooi samen klinken, plus een trommel en een belletje.
 - **Bellenweide**: zeepbellen die langzaam opstijgen. Een tik laat ze ploppen.
 - **Prentenboek**: één groot voorwerp per bladzijde, in vier hoofdstukken. De naam wordt uitgesproken bij elke tik.
+- **Mijn spullen**: een vijfde hoofdstuk in het prentenboek met foto's van haar eigen beer, bekertje of schoenen. Jij voegt ze toe in het oudermenu.
 - **Gezichtje**: tik op neus, ogen, mond, oren, haar en wangen.
 - **Zacht einde**: na 10 minuten (instelbaar) gaat de zon onder, zwaaien de dieren en klinkt een slaapliedje. Een tik op de maan begint opnieuw.
 
@@ -33,7 +34,11 @@ Gebruik "Begeleide toegang" van iOS.
 
 Tik op het tandwieltje rechtsboven, houd de knop drie seconden ingedrukt en los de rekensom op. In het menu kun je elk woord en elk dierengeluid zelf inspreken. Een bekende stem houdt haar aandacht beter vast dan een computerstem. Zonder opname gebruikt de app de Nederlandse stem van iOS. Staat die er niet op? Instellingen > Toegankelijkheid > Gesproken materiaal > Stemmen > Nederlands.
 
-Opnames en instellingen blijven op het apparaat. Niets gaat naar internet.
+## Haar eigen spullen
+
+Peuters herkennen hun eigen beer sneller dan een getekende. In het oudermenu maak je een foto van iets van haar, typt de naam erbij en spreekt die eventueel in. De foto komt in het prentenboek, in het hoofdstuk met de camera. Bij elke tik hoort ze de naam. Foto's worden verkleind opgeslagen op het apparaat.
+
+Opnames, foto's en instellingen blijven op het apparaat. Niets gaat naar internet.
 
 ## Waarom de app zo is gemaakt
 
