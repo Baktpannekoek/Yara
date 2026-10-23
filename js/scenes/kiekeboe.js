@@ -61,27 +61,36 @@ function makeScene(setKey) {
         ctx.setHint(item.question);
       }
 
-      function next() {
+      // Deuren dicht: het volgende dier staat klaar, maar komt pas bij een nieuwe tik op de deur
+      function closeDoors() {
         open = false; busy = true;
         animalEl.classList.remove('show');
         doorL.classList.remove('open');
         doorR.classList.remove('open');
         ctx.audio.thud();
         position[setKey] = (position[setKey] + 1) % set.items.length;
-        later(reveal, 420);
+        later(() => { busy = false; }, 700);
+        ctx.setHint(set.hint);
       }
+
+      const inside = (el, e, padFactor) => {
+        const r = el.getBoundingClientRect();
+        const pad = r.width * padFactor;
+        return e.clientX >= r.left - pad && e.clientX <= r.right + pad && e.clientY >= r.top - pad && e.clientY <= r.bottom + pad;
+      };
 
       ctx.onTap(root, (e) => {
         if (busy) return;
-        if (!open) { reveal(); return; }
-        const r = animalEl.getBoundingClientRect();
-        const pad = r.width * 0.2;
-        const onIt = e.clientX >= r.left - pad && e.clientX <= r.right + pad && e.clientY >= r.top - pad && e.clientY <= r.bottom + pad;
-        if (onIt) {
+        if (!open) {
+          // Alleen een bewuste tik op het huisje zelf opent de deuren
+          if (inside(root.querySelector('#farm'), e, 0.05)) reveal();
+          return;
+        }
+        if (inside(animalEl, e, 0.2)) {
           ctx.animate(animalEl, 'anim-bounce');
           play(current(), 800);
         } else {
-          next();
+          closeDoors();
         }
       });
 
