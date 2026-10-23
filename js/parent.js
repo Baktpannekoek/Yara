@@ -235,8 +235,18 @@ function recRow(it, canRecord) {
   </div>`;
 }
 
+const MIN_REC_MS = 1000;    // korter dan dit levert op iOS een leeg bestand op
+let recStartedAt = 0;
+
+function stopRecording(rec) {
+  // Snel op Stop getikt? Dan nog even doorlopen tot een seconde, anders is het bestand leeg
+  const rest = MIN_REC_MS - (performance.now() - recStartedAt);
+  if (rest > 0) { setTimeout(() => { if (rec.state === 'recording') rec.stop(); }, rest); return; }
+  if (rec.state === 'recording') rec.stop();
+}
+
 async function toggleRecord(key, btn, status, refresh) {
-  if (recorder && recorder.state === 'recording') { recorder.stop(); return; }
+  if (recorder && recorder.state === 'recording') { stopRecording(recorder); return; }
   // Andere knoppen die nog op "Stop" staan terugzetten
   overlay.querySelectorAll('.btn.recording').forEach((b) => { b.classList.remove('recording'); b.textContent = 'Opnemen'; });
   if (stream && !stream.active) stream = null;
@@ -261,9 +271,13 @@ async function toggleRecord(key, btn, status, refresh) {
     try { rec = new MediaRecorder(stream); } catch (e2) { status.textContent = 'opnemen lukt niet'; releaseMic(); return; }
   }
   recorder = rec;
-  rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+  // iOS levert de data soms pas na het stop-signaal; daar wachten we even op
+  let gotData = null;
+  const dataReady = new Promise((res) => { gotData = res; });
+  rec.ondataavailable = (e) => { if (e.data && e.data.size) { chunks.push(e.data); gotData(); } };
   // Knop, status en de grens van vier seconden pas als de microfoon echt loopt
   rec.onstart = () => {
+    recStartedAt = performance.now();
     btn.classList.add('recording');
     btn.textContent = 'Stop';
     status.textContent = 'opnemen…';
@@ -271,14 +285,15 @@ async function toggleRecord(key, btn, status, refresh) {
   };
   rec.onstop = async () => {
     clearTimeout(recTimer);
-    releaseMic();
     if (recorder === rec) recorder = null;
     btn.classList.remove('recording');
     btn.textContent = 'Opnemen';
+    status.textContent = 'opslaan…';
+    await Promise.race([dataReady, new Promise((r) => setTimeout(r, 2000))]);
+    releaseMic();
     const type = rec.mimeType || mime || 'audio/mp4';
     const blob = new Blob(chunks, { type });
-    if (blob.size < 200) { status.textContent = 'te kort'; return; }
-    status.textContent = 'opslaan…';
+    if (blob.size < 200) { status.textContent = 'niets opgenomen, probeer nog eens'; return; }
     try {
       // Eerst controleren dat de opname afspeelbaar is, dan pas bewaren
       const buffer = await audio.decode(blob);
