@@ -51,9 +51,9 @@ function ensureContext() {
   const AC = window.AudioContext || window.webkitAudioContext;
   ctx = new AC({ latencyHint: 'interactive' });
   const comp = ctx.createDynamicsCompressor();
-  comp.threshold.value = -12;
-  comp.knee.value = 10;
-  comp.ratio.value = 4;
+  comp.threshold.value = -10;
+  comp.knee.value = 12;
+  comp.ratio.value = 3;
   comp.attack.value = 0.004;
   comp.release.value = 0.15;
   master = ctx.createGain();
@@ -355,7 +355,16 @@ export function playBuffer(buffer, gain = 1) {
 
 /* ---- Melodie en slaapliedje ---- */
 
-const N = { C4: 261.63, D4: 293.66, E4: 329.63, F4: 349.23, G4: 392.0, A4: 440.0, B4: 493.88, C5: 523.25 };
+const N = { G3: 196.0, A3: 220.0, B3: 246.94, C4: 261.63, D4: 293.66, E4: 329.63, F4: 349.23, G4: 392.0, A4: 440.0, B4: 493.88, C5: 523.25, D5: 587.33, E5: 659.25 };
+
+// "Vader Jacob" (Frère Jacques), oud volksliedje
+const VADERJACOB = [
+  ['C4', 1], ['D4', 1], ['E4', 1], ['C4', 1], ['C4', 1], ['D4', 1], ['E4', 1], ['C4', 1],
+  ['E4', 1], ['F4', 1], ['G4', 2], ['E4', 1], ['F4', 1], ['G4', 2],
+  ['G4', 0.5], ['A4', 0.5], ['G4', 0.5], ['F4', 0.5], ['E4', 1], ['C4', 1],
+  ['G4', 0.5], ['A4', 0.5], ['G4', 0.5], ['F4', 0.5], ['E4', 1], ['C4', 1],
+  ['C4', 1], ['G3', 1], ['C4', 2], ['C4', 1], ['G3', 1], ['C4', 2]
+];
 
 // "Altijd is Kortjakje ziek", een oud volkswijsje (zelfde melodie als Twinkle Twinkle)
 const LULLABY = [
@@ -370,21 +379,36 @@ const LULLABY = [
 let melodyTimer = null;
 let melodyBus = null;   // eigen kanaal, zodat het liedje echt stopt bij een tik op de maan
 
-export function playLullaby({ beat = 0.75, gain = 0.2, onDone } = {}) {
+const MELODIES = { kortjakje: LULLABY, vaderjacob: VADERJACOB };
+
+/* Speelt een melodie op een eigen kanaal, zodat stopMelody() hem echt kan stoppen */
+export function playMelody(name, { beat = 0.5, gain = 0.26, soft = false, onDone } = {}) {
   stopMelody();
-  if (!ctx) return;
+  const notes = MELODIES[name];
+  if (!ctx || !notes) return 0;
   melodyBus = ctx.createGain();
   melodyBus.connect(master);
   const dest = melodyBus;
   let t = 0.3;
-  LULLABY.forEach(([n, len]) => {
+  notes.forEach(([n, len]) => {
     const dur = len * beat;
-    voice({ type: 'sine', freq: N[n], dur: dur * 0.85, gain, attack: 0.08, release: 0.5, when: t, dest });
-    voice({ type: 'triangle', freq: N[n] / 2, dur: dur * 0.85, gain: gain * 0.35, attack: 0.1, release: 0.5, when: t, lp: 600, dest });
+    if (soft) {
+      voice({ type: 'sine', freq: N[n], dur: dur * 0.85, gain, attack: 0.08, release: 0.5, when: t, dest });
+      voice({ type: 'triangle', freq: N[n] / 2, dur: dur * 0.85, gain: gain * 0.35, attack: 0.1, release: 0.5, when: t, lp: 600, dest });
+    } else {
+      voice({ type: 'triangle', freq: N[n], dur: dur * 0.8, gain, attack: 0.01, release: 0.3, when: t, dest });
+      voice({ type: 'sine', freq: N[n] * 2, dur: dur * 0.5, gain: gain * 0.25, attack: 0.01, release: 0.2, when: t, dest });
+    }
     t += dur;
   });
-  melodyTimer = setTimeout(() => { melodyTimer = null; if (onDone) onDone(); }, (t + 1.5) * 1000);
+  melodyTimer = setTimeout(() => { melodyTimer = null; if (onDone) onDone(); }, (t + 1.2) * 1000);
   return t;
+}
+
+export function isMelodyPlaying() { return !!melodyTimer; }
+
+export function playLullaby({ beat = 0.75, gain = 0.2, onDone } = {}) {
+  return playMelody('kortjakje', { beat, gain, soft: true, onDone });
 }
 
 export function stopMelody() {

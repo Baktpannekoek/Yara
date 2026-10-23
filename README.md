@@ -22,11 +22,11 @@ Gebruik "Begeleide toegang" van iOS.
 
 ## Wat erin zit
 
-- **Boerderij**: kiekeboe. Tik op de schuur, de deur gaat open en er komt een dier tevoorschijn met zijn geluid en zijn naam. Tik op het dier voor nog een keer, tik ergens anders voor het volgende dier.
-- **Wilde dieren**: dezelfde kiekeboe in de jungle, met leeuw, olifant, aap, giraf, zebra en krokodil.
-- **Voertuigen**: kiekeboe in de garage, met auto, vliegtuig, trein, bus, tractor, boot, brandweerauto en fiets, elk met een eigen geluid.
-- **Muziekhoek**: zes vormen met tonen die altijd mooi samen klinken, plus een trommel en een belletje.
-- **Bellenweide**: zeepbellen die langzaam opstijgen. Een tik laat ze ploppen.
+- **Kiekeboe**: tik op het huisje, de deur gaat open en er komt een dier of voertuig tevoorschijn met zijn geluid en zijn naam. Tik op het dier voor nog een keer, tik ergens anders om de deur te sluiten. Met de knopjes onderin wissel je tussen boerderij, wilde dieren en garage.
+- **Muziek**: zes klankstaven die altijd mooi samen klinken en negen instrumenten met hun naam. Met het knopje onderin ga je naar de liedjes: zes bekende kinderliedjes die jullie zelf inzingen in het oudermenu. Zonder opname klinkt de melodie van Kortjakje en Vader Jacob.
+- **Doe mee**: een poppetje springt, klapt, stampt, zwaait, rent of draait, met het woord erbij. Zij doet het na.
+- **Bellen**: zeepbellen die opstijgen. Een tik laat ze ploppen. Het tempo (rustig, gewoon, druk) stel je in het oudermenu in.
+- **Stickers**: elke tik plakt een sticker op de wei. De strook onderin kiest welke, de doos ruimt op.
 - **Prentenboek**: één groot voorwerp per bladzijde, in vier hoofdstukken. De naam wordt uitgesproken bij elke tik.
 - **Mijn spullen**: een vijfde hoofdstuk in het prentenboek met foto's van haar eigen beer, bekertje of schoenen. Jij voegt ze toe in het oudermenu.
 - **Gezichtje**: tik op neus, ogen, mond, oren, haar en wangen. Een tik naast de onderdelen geeft een ander gezichtje.

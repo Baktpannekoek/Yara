@@ -431,3 +431,132 @@ svg { display: block; overflow: visible; }
 .photo-item img { width: 44px; height: 44px; object-fit: cover; border-radius: 10px; flex: none; background: var(--cream); }
 .photo-item { flex-wrap: wrap; }
 .photo-item .actions { display: flex; gap: 8px; margin-left: auto; }
+
+
+/* ---------- Kiekeboe: wisselknopjes onderin ---------- */
+.scene[data-scene="kiekeboe"], .scene[data-scene="music"], .scene[data-scene="move"], .scene[data-scene="stickers"] {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 17vmin);
+}
+.scene[data-scene="kiekeboe"] .farm-wrap { width: min(90vmin, 92vw, 700px, 62vh); }
+.set-switch, .mode-switch {
+  position: absolute;
+  bottom: calc(env(safe-area-inset-bottom) + 10px);
+  left: 0; right: 0;
+  display: flex; justify-content: center; gap: 4vmin;
+  z-index: 2;
+}
+.set-btn, .mode-btn {
+  width: min(14vmin, 84px); height: min(14vmin, 84px);
+  border-radius: 50%;
+  background: rgba(255,255,255,.7);
+  display: grid; place-items: center;
+  opacity: .75;
+  transition: transform 200ms var(--ease-soft), opacity 200ms, background 200ms;
+}
+.set-btn svg, .mode-btn svg { width: 72%; height: 72%; }
+.set-btn.active, .mode-btn.active { opacity: 1; background: #fff; transform: scale(1.14); box-shadow: 0 6px 16px rgba(0,0,0,.12); }
+
+/* ---------- Muziek: twee standen ---------- */
+.music-body { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 2vmin; width: 100%; }
+.pad-row { display: flex; gap: 1.5vmin; justify-content: center; }
+.pad-row .music-pad { width: min(13vmin, 90px); }
+.inst-grid, .song-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 2vmin; width: min(94vw, 900px); }
+.inst-tile, .song-tile {
+  width: min(22vmin, 130px); height: min(22vmin, 130px);
+  border-radius: 22%;
+  background: rgba(255,255,255,.78);
+  box-shadow: 0 6px 18px rgba(0,0,0,.07);
+  display: grid; place-items: center;
+  transition: transform 200ms var(--ease-soft);
+}
+.song-tile { width: min(26vmin, 160px); height: min(26vmin, 160px); }
+.inst-tile svg, .song-tile svg { width: 74%; height: 74%; }
+.inst-tile:active, .song-tile:active { transform: scale(.94); }
+.song-tile.playing { background: #fff; animation: bob 1.2s ease-in-out infinite; box-shadow: 0 0 0 4px var(--sun); }
+@media (orientation: landscape) and (max-height: 500px) {
+  .pad-row .music-pad { width: min(10vmin, 60px); }
+  .inst-tile { width: min(17vmin, 100px); height: min(17vmin, 100px); }
+  .song-tile { width: min(20vmin, 120px); height: min(20vmin, 120px); }
+}
+
+/* ---------- Doe mee: het poppetje ---------- */
+.move-figure { position: relative; z-index: 1; width: min(56vmin, 46vh, 440px); height: min(56vmin, 46vh, 440px); }
+.move-figure svg { width: 100%; height: 100%; overflow: visible; }
+.move-figure [data-part] { transform-box: fill-box; transform-origin: 50% 0%; }
+.move-figure [data-part="hoofd"], .move-figure [data-part="romp"] { transform-origin: 50% 50%; }
+.move-buttons { position: relative; z-index: 1; display: flex; flex-wrap: wrap; justify-content: center; gap: 2.5vmin; margin-top: 2vmin; width: min(94vw, 700px); }
+.move-btn {
+  width: min(15vmin, 96px); height: min(15vmin, 96px);
+  border-radius: 50%;
+  background: rgba(255,255,255,.8);
+  box-shadow: 0 4px 12px rgba(0,0,0,.08);
+  display: grid; place-items: center;
+  transition: transform 200ms var(--ease-soft), background 200ms;
+}
+.move-btn svg { width: 68%; height: 68%; }
+.move-btn.active { background: #fff; box-shadow: 0 0 0 4px var(--sun); }
+@keyframes mv-spring { 0%,100% { transform: translateY(0); } 30% { transform: translateY(-20%); } 58% { transform: translateY(0); } 74% { transform: translateY(-7%); } 88% { transform: translateY(0); } }
+@keyframes mv-tuck-l { 0%,100% { transform: rotate(0); } 30% { transform: rotate(28deg); } 58% { transform: rotate(0); } }
+@keyframes mv-tuck-r { 0%,100% { transform: rotate(0); } 30% { transform: rotate(-28deg); } 58% { transform: rotate(0); } }
+@keyframes mv-up-l { 0%,100% { transform: rotate(0); } 30% { transform: rotate(-150deg); } 70% { transform: rotate(-150deg); } }
+@keyframes mv-up-r { 0%,100% { transform: rotate(0); } 30% { transform: rotate(150deg); } 70% { transform: rotate(150deg); } }
+.do-spring svg { animation: mv-spring 900ms ease-out; }
+.do-spring [data-part="been-l"] { animation: mv-tuck-l 900ms ease-out; }
+.do-spring [data-part="been-r"] { animation: mv-tuck-r 900ms ease-out; }
+.do-spring [data-part="arm-l"] { animation: mv-up-l 900ms ease-out; }
+.do-spring [data-part="arm-r"] { animation: mv-up-r 900ms ease-out; }
+@keyframes mv-klap-l { 0%,100% { transform: rotate(0); } 20%,60% { transform: rotate(-75deg); } 40%,80% { transform: rotate(-45deg); } }
+@keyframes mv-klap-r { 0%,100% { transform: rotate(0); } 20%,60% { transform: rotate(75deg); } 40%,80% { transform: rotate(45deg); } }
+.do-klap [data-part="arm-l"] { animation: mv-klap-l 800ms ease-in-out; }
+.do-klap [data-part="arm-r"] { animation: mv-klap-r 800ms ease-in-out; }
+@keyframes mv-stamp-l { 0%,45%,100% { transform: rotate(0); } 18% { transform: rotate(38deg); } }
+@keyframes mv-stamp-r { 0%,50%,100% { transform: rotate(0); } 70% { transform: rotate(-38deg); } }
+@keyframes mv-bob { 0%,100% { transform: translateY(0); } 30%,75% { transform: translateY(-4%); } 40%,85% { transform: translateY(0); } }
+.do-stamp [data-part="been-l"] { animation: mv-stamp-l 900ms ease-in-out; }
+.do-stamp [data-part="been-r"] { animation: mv-stamp-r 900ms ease-in-out; }
+.do-stamp svg { animation: mv-bob 900ms ease-in-out; }
+@keyframes mv-zwaai { 0%,100% { transform: rotate(0); } 25% { transform: rotate(160deg); } 45% { transform: rotate(190deg); } 65% { transform: rotate(160deg); } 85% { transform: rotate(185deg); } }
+.do-zwaai [data-part="arm-r"] { animation: mv-zwaai 1000ms ease-in-out; }
+@keyframes mv-ren-a { 0%,100% { transform: rotate(0); } 25% { transform: rotate(35deg); } 75% { transform: rotate(-35deg); } }
+@keyframes mv-ren-b { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-35deg); } 75% { transform: rotate(35deg); } }
+@keyframes mv-ren-bob { 0%,50%,100% { transform: translateY(0); } 25%,75% { transform: translateY(-3%); } }
+.do-ren [data-part="been-l"], .do-ren [data-part="arm-r"] { animation: mv-ren-a 450ms ease-in-out 2; }
+.do-ren [data-part="been-r"], .do-ren [data-part="arm-l"] { animation: mv-ren-b 450ms ease-in-out 2; }
+.do-ren svg { animation: mv-ren-bob 450ms ease-in-out 2; }
+@keyframes mv-draai { 0% { transform: scaleX(1) rotate(0); } 25% { transform: scaleX(0.1) rotate(4deg); } 50% { transform: scaleX(-1) rotate(0); } 75% { transform: scaleX(0.1) rotate(-4deg); } 100% { transform: scaleX(1) rotate(0); } }
+.do-draai svg { animation: mv-draai 1000ms ease-in-out; }
+.do-draai [data-part="arm-l"] { animation: mv-up-l 1000ms ease-in-out; }
+.do-draai [data-part="arm-r"] { animation: mv-up-r 1000ms ease-in-out; }
+
+/* ---------- Stickers ---------- */
+.sticker-field { position: absolute; inset: 0; z-index: 1; }
+.sticker { position: absolute; width: var(--s); height: var(--s); pointer-events: none; filter: drop-shadow(0 2px 3px rgba(0,0,0,.15)); }
+.sticker svg { width: 100%; height: 100%; }
+.sticker-strip {
+  position: absolute;
+  bottom: calc(env(safe-area-inset-bottom) + 10px);
+  left: calc(env(safe-area-inset-left) + 10px);
+  display: flex; gap: 2vmin;
+  z-index: 3;
+  background: rgba(255,255,255,.55);
+  border-radius: 999px;
+  padding: 1.2vmin;
+}
+.sticker-pick {
+  width: min(13vmin, 78px); height: min(13vmin, 78px);
+  border-radius: 50%;
+  background: rgba(255,255,255,.75);
+  display: grid; place-items: center;
+  opacity: .8;
+  transition: transform 200ms var(--ease-soft), opacity 200ms;
+}
+.sticker-pick svg { width: 72%; height: 72%; }
+.sticker-pick.active { opacity: 1; background: #fff; transform: scale(1.14); box-shadow: 0 0 0 4px var(--sun); }
+.opruimdoos {
+  position: absolute;
+  bottom: calc(env(safe-area-inset-bottom) + 8px);
+  right: calc(env(safe-area-inset-right) + 10px);
+  width: min(20vmin, 120px); height: min(20vmin, 120px);
+  z-index: 3;
+}
+.opruimdoos svg { width: 100%; height: 100%; }

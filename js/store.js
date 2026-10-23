@@ -54,7 +54,8 @@ export const DEFAULTS = {
   childName: 'Yara',
   sessionMinutes: 10,     // 0 = geen einde
   volume: 0.8,
-  scenes: { farm: true, wild: true, vehicles: true, music: true, bubbles: true, book: true, face: true }
+  bubbleLevel: 'gewoon',  // rustig, gewoon of druk
+  scenes: { kiekeboe: true, music: true, move: true, bubbles: true, stickers: true, book: true, face: true }
 };
 
 let cache = { ...DEFAULTS, scenes: { ...DEFAULTS.scenes } };

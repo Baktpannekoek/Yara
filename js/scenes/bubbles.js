@@ -1,10 +1,17 @@
 /* Bellenweide: zeepbellen stijgen langzaam op, een tik laat ze ploppen */
 
-const MAX = 5;
+/* Drie standen, in te stellen in het oudermenu: hoeveel bellen, hoe snel ze stijgen, hoe vaak er een bijkomt */
+const LEVELS = {
+  rustig: { max: 4, rise: [11000, 17000], spawn: [1400, 2800], sway: 6 },
+  gewoon: { max: 6, rise: [7000, 11000], spawn: [700, 1600], sway: 10 },
+  druk:   { max: 9, rise: [4000, 7000], spawn: [400, 1000], sway: 16 }
+};
 
 export default {
   id: 'bubbles',
   mount(root, ctx) {
+    const L = LEVELS[ctx.settings().bubbleLevel] || LEVELS.gewoon;
+    const MAX = L.max;
     root.innerHTML = `
       <div class="bg">${ctx.art.landscape()}</div>
       <div class="bubble-field" id="field"></div>`;
@@ -37,8 +44,8 @@ export default {
       if (hasFlyer) el.innerHTML = spawned % 8 === 0 ? ctx.art.vogel() : ctx.art.vlinder();
       field.appendChild(el);
 
-      const dur = 11000 + Math.random() * 6000;
-      const sway = (Math.random() > 0.5 ? 1 : -1) * (4 + Math.random() * 6) * vmin();
+      const dur = L.rise[0] + Math.random() * (L.rise[1] - L.rise[0]);
+      const sway = (Math.random() > 0.5 ? 1 : -1) * (4 + Math.random() * L.sway) * vmin();
       const anim = el.animate([
         { transform: 'translate(0, 0)' },
         { transform: `translate(${sway}px, ${-(window.innerHeight * 0.5 + size)}px)` },
@@ -89,7 +96,7 @@ export default {
 
     function schedule() {
       clearTimeout(spawnTimer);
-      spawnTimer = setTimeout(spawn, 1400 + Math.random() * 1400);
+      spawnTimer = setTimeout(spawn, L.spawn[0] + Math.random() * (L.spawn[1] - L.spawn[0]));
     }
 
     spawn();

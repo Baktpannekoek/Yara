@@ -9,7 +9,19 @@ import * as audio from './audio.js';
 import { getRecording, listRecordingKeys } from './store.js';
 
 const buffers = new Map();   // key -> AudioBuffer
+const gains = new Map();     // key -> versterking zodat elke opname even hard klinkt
 let voices = [];
+
+/* Piek van een opname meten: een zachte opname krijgt meer versterking (hooguit vier keer) */
+function peakGain(buffer) {
+  let peak = 0;
+  for (let c = 0; c < buffer.numberOfChannels; c++) {
+    const d = buffer.getChannelData(c);
+    for (let i = 0; i < d.length; i += 4) { const v = Math.abs(d[i]); if (v > peak) peak = v; }
+  }
+  if (!peak) return 1;
+  return Math.max(0.5, Math.min(4, 0.9 / peak));
+}
 let nlVoice = null;
 let primed = false;
 
@@ -64,6 +76,7 @@ export async function loadOne(key) {
   try {
     const buf = await audio.decode(rec.blob);
     buffers.set(key, buf);
+    gains.set(key, peakGain(buf));
     return true;
   } catch (e) {
     console.warn('Opname niet te decoderen', key, e);
@@ -72,20 +85,26 @@ export async function loadOne(key) {
   }
 }
 
-export function forget(key) { buffers.delete(key); }
-export function setBuffer(key, buffer) { buffers.set(key, buffer); }
+export function forget(key) { buffers.delete(key); gains.delete(key); }
+export function setBuffer(key, buffer) { buffers.set(key, buffer); gains.set(key, peakGain(buffer)); }
 export function hasRecording(key) { return buffers.has(key); }
 export function recordingCount() { return buffers.size; }
 
+/* Speel een opname af en geef de bron terug, zodat de aanroeper hem kan stoppen */
+export function playRecording(key) {
+  if (!buffers.has(key)) return null;
+  return audio.playBuffer(buffers.get(key), gains.get(key) || 1);
+}
+
 /* Spreek een woord uit. Opname heeft voorrang. */
 export function say(key, text) {
-  if (buffers.has(key)) { audio.playBuffer(buffers.get(key)); return 'opname'; }
+  if (buffers.has(key)) { playRecording(key); return 'opname'; }
   return speak(text) ? 'stem' : 'stil';
 }
 
 /* Speel een geluid: opname van de ouder, anders het synthetische geluid. */
 export function sound(key, fallback) {
-  if (buffers.has(key)) { audio.playBuffer(buffers.get(key)); return 'opname'; }
+  if (buffers.has(key)) { playRecording(key); return 'opname'; }
   if (fallback) fallback();
   return 'synth';
 }

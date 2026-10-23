@@ -8,14 +8,16 @@ import { openGate } from './parent.js';
 
 import start from './scenes/start.js';
 import world from './scenes/world.js';
-import { farm, wild, vehicles } from './scenes/kiekeboe.js';
+import kiekeboe from './scenes/kiekeboe.js';
 import music from './scenes/music.js';
+import move from './scenes/move.js';
 import bubbles from './scenes/bubbles.js';
+import stickers from './scenes/stickers.js';
 import book from './scenes/book.js';
 import face from './scenes/face.js';
 import sleep from './scenes/sleep.js';
 
-const SCENES = { start, world, farm, wild, vehicles, music, bubbles, book, face, sleep };
+const SCENES = { start, world, kiekeboe, music, move, bubbles, stickers, book, face, sleep };
 const NO_TOPBAR = new Set(['start', 'sleep']);
 
 const stage = document.getElementById('stage');

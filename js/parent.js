@@ -136,13 +136,12 @@ export function openMenu(ctx) {
       <div class="row"><label for="volume">Volume</label><input type="range" id="volume" min="0.2" max="1" step="0.05" value="${s.volume}"></div>
 
       <h3>Plekjes</h3>
-      <div class="row"><label>Boerderij</label><input class="toggle" type="checkbox" data-scene="farm" ${s.scenes.farm !== false ? 'checked' : ''}></div>
-      <div class="row"><label>Wilde dieren</label><input class="toggle" type="checkbox" data-scene="wild" ${s.scenes.wild !== false ? 'checked' : ''}></div>
-      <div class="row"><label>Voertuigen</label><input class="toggle" type="checkbox" data-scene="vehicles" ${s.scenes.vehicles !== false ? 'checked' : ''}></div>
-      <div class="row"><label>Muziek</label><input class="toggle" type="checkbox" data-scene="music" ${s.scenes.music !== false ? 'checked' : ''}></div>
-      <div class="row"><label>Bellen</label><input class="toggle" type="checkbox" data-scene="bubbles" ${s.scenes.bubbles !== false ? 'checked' : ''}></div>
-      <div class="row"><label>Prentenboek</label><input class="toggle" type="checkbox" data-scene="book" ${s.scenes.book !== false ? 'checked' : ''}></div>
-      <div class="row"><label>Gezichtje</label><input class="toggle" type="checkbox" data-scene="face" ${s.scenes.face !== false ? 'checked' : ''}></div>
+      ${[['kiekeboe', 'Kiekeboe (boerderij, wilde dieren, voertuigen)'], ['music', 'Muziek en liedjes'], ['move', 'Doe mee'], ['bubbles', 'Bellen'], ['stickers', 'Stickers'], ['book', 'Prentenboek'], ['face', 'Gezichtje']]
+        .map(([k, label]) => `<div class="row"><label>${label}</label><input class="toggle" type="checkbox" data-scene="${k}" ${s.scenes[k] !== false ? 'checked' : ''}></div>`).join('')}
+      <div class="row"><label for="bubble-level">Tempo bellen</label>
+        <select id="bubble-level">
+          <option value="rustig">Rustig</option><option value="gewoon">Gewoon</option><option value="druk">Druk</option>
+        </select></div>
 
       <h3>Mijn spullen</h3>
       <p>Een foto van haar eigen beer, bekertje of schoenen, met de naam erbij. Zo krijgt het prentenboek een vijfde hoofdstuk met haar eigen wereld. Bij elke tik hoort ze de naam.</p>
@@ -181,6 +180,8 @@ export function openMenu(ctx) {
     </div>`;
 
   overlay.querySelector('#minutes').value = String(s.sessionMinutes);
+  overlay.querySelector('#bubble-level').value = s.bubbleLevel || 'gewoon';
+  overlay.querySelector('#bubble-level').addEventListener('change', (e) => setSetting('bubbleLevel', e.target.value));
 
   overlay.querySelector('#name').addEventListener('change', (e) => {
     const v = e.target.value.trim() || DEFAULTS.childName;
@@ -209,7 +210,7 @@ export function openMenu(ctx) {
     refresh();
     btnPlay.addEventListener('click', () => { audio.unlock(); speech.say(key, text); });
     btnDel.addEventListener('click', async () => { await deleteRecording(key); speech.forget(key); refresh(); });
-    if (btnRec) btnRec.addEventListener('click', () => toggleRecord(key, btnRec, status, refresh));
+    if (btnRec) btnRec.addEventListener('click', () => toggleRecord(key, btnRec, status, refresh, Number(row.dataset.max) || MAX_REC_MS));
   });
 
   wirePhotos(canRecord);
@@ -226,7 +227,7 @@ export function openMenu(ctx) {
 }
 
 function recRow(it, canRecord) {
-  return `<div class="rec-item" data-key="${it.key}" data-text="${escapeHtml(it.text)}">
+  return `<div class="rec-item" data-key="${it.key}" data-text="${escapeHtml(it.text)}" data-max="${it.max || ''}">
     <span class="name">${escapeHtml(it.label)}</span>
     <span class="status"></span>
     ${canRecord ? '<button class="btn rec">Opnemen</button>' : ''}
@@ -248,7 +249,7 @@ function stopRecording(rec) {
 /* Opnemen. Bewust zo eenvoudig mogelijk gehouden, zoals in de eerste versie die op iPhone werkte:
    één microfoonstroom voor het hele menu, geen audiosessie-instellingen, de opname bewaren
    zodra de data binnen is. Het stille geluidselement staat tijdens het opnemen stil. */
-async function toggleRecord(key, btn, status, refresh) {
+async function toggleRecord(key, btn, status, refresh, maxMs = MAX_REC_MS) {
   if (recorder && recorder.state === 'recording') { stopRecording(recorder); return; }
   // Andere knoppen die nog op "Stop" staan terugzetten
   overlay.querySelectorAll('.btn.recording').forEach((b) => { b.classList.remove('recording'); b.textContent = 'Opnemen'; });
@@ -261,7 +262,8 @@ async function toggleRecord(key, btn, status, refresh) {
     let lastErr = null;
     for (let poging = 0; poging < 2 && !stream; poging++) {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        // Zonder echo-onderdrukking klinkt een stem voller; iOS kiest anders de dunne telefoonstand
+        stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true } });
       } catch (e) {
         lastErr = e;
         console.warn('getUserMedia', poging, e);
@@ -280,7 +282,9 @@ async function toggleRecord(key, btn, status, refresh) {
   const chunks = [];
   let rec = null;
   try {
-    rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+    const opts = { audioBitsPerSecond: 128000 };
+    if (mime) opts.mimeType = mime;
+    rec = new MediaRecorder(stream, opts);
   } catch (e) {
     try { rec = new MediaRecorder(stream); } catch (e2) { status.textContent = 'opnemen lukt niet'; audio.setRecording(false); return; }
   }
@@ -300,7 +304,7 @@ async function toggleRecord(key, btn, status, refresh) {
     const blob = new Blob(chunks, { type });
     if (blob.size < 200) {
       status.textContent = 'niets opgenomen, probeer nog eens';
-      audio.setRecording(false);
+      releaseMic();
       return;
     }
     try {
@@ -308,7 +312,7 @@ async function toggleRecord(key, btn, status, refresh) {
       const ok = await speech.loadOne(key);
       status.textContent = ok ? 'opgeslagen, tik op ▶' : 'opgeslagen, maar niet af te spelen';
       refresh();
-      audio.setRecording(false);
+      releaseMic();
     } catch (e) {
       console.warn(e);
       status.textContent = 'opslaan mislukt';
@@ -321,7 +325,7 @@ async function toggleRecord(key, btn, status, refresh) {
     btn.classList.add('recording');
     btn.textContent = 'Stop';
     status.textContent = 'opnemen…';
-    recTimer = setTimeout(() => { if (rec.state === 'recording') rec.stop(); }, MAX_REC_MS);
+    recTimer = setTimeout(() => { if (rec.state === 'recording') rec.stop(); }, maxMs);
   } catch (e) {
     console.warn(e);
     status.textContent = 'opnemen lukt niet';

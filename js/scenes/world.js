@@ -1,13 +1,13 @@
 /* De wereld: grote tegels naar de plekjes */
 
-import * as extra from '../art-extra.js';
+import * as more from '../art-more.js';
 
 const TILES = [
-  { id: 'farm', icon: (art) => art.barnIcon(), label: 'Boerderij' },
-  { id: 'wild', icon: () => extra.wildIcon(), label: 'Wilde dieren' },
-  { id: 'vehicles', icon: () => extra.vehicleIcon(), label: 'Voertuigen' },
+  { id: 'kiekeboe', icon: (art) => art.barnIcon(), label: 'Kiekeboe' },
   { id: 'music', icon: (art) => art.noteIcon(), label: 'Muziek' },
+  { id: 'move', icon: () => more.doeMeeIcon(), label: 'Doe mee' },
   { id: 'bubbles', icon: (art) => art.bubbleIcon(), label: 'Bellen' },
+  { id: 'stickers', icon: () => more.stickerIcon(), label: 'Stickers' },
   { id: 'book', icon: (art) => art.bookIcon(), label: 'Boek' },
   { id: 'face', icon: (art) => art.faceIcon(), label: 'Gezichtje' }
 ];

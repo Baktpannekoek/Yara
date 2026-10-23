@@ -88,6 +88,45 @@ export const CHAPTERS = [
   }
 ];
 
+/* Muziek: instrumenten met naam, en liedjes die ouders zelf inzingen */
+export const INSTRUMENTS = [
+  { key: 'xylofoon',   name: 'xylofoon' },
+  { key: 'trommel',    name: 'trommel' },
+  { key: 'bel',        name: 'bel' },
+  { key: 'gitaar',     name: 'gitaar' },
+  { key: 'piano',      name: 'piano' },
+  { key: 'trompet',    name: 'trompet' },
+  { key: 'rammelaar',  name: 'rammelaar' },
+  { key: 'fluit',      name: 'fluit' },
+  { key: 'tamboerijn', name: 'tamboerijn' }
+];
+
+export const SONGS = [
+  { key: 'lied-kortjakje',      title: 'Altijd is Kortjakje ziek',     icon: 'bed',         melody: 'kortjakje' },
+  { key: 'lied-vaderjacob',     title: 'Vader Jacob',                  icon: 'bel',         melody: 'vaderjacob' },
+  { key: 'lied-slaapkindje',    title: 'Slaap kindje slaap',           icon: 'maan' },
+  { key: 'lied-maneschijn',     title: 'In de maneschijn',             icon: 'ster' },
+  { key: 'lied-paddenstoel',    title: 'Op een grote paddenstoel',     icon: 'paddenstoel' },
+  { key: 'lied-hoofdschouders', title: 'Hoofd, schouders, knie en teen', icon: 'gezicht' }
+];
+
+/* Doe mee: bewegingen om na te doen */
+export const MOVES = [
+  { key: 'springen', name: 'springen', say: 'Springen!', question: 'Spring jij ook?',               fx: 'boing',  anim: 'spring' },
+  { key: 'klappen',  name: 'klappen',  say: 'Klappen!',  question: 'Klap jij ook in je handen?',    fx: 'klap',   anim: 'klap' },
+  { key: 'stampen',  name: 'stampen',  say: 'Stampen!',  question: 'Stamp jij ook met je voeten?',  fx: 'stamp',  anim: 'stamp' },
+  { key: 'zwaaien',  name: 'zwaaien',  say: 'Zwaaien!',  question: 'Zwaai jij ook? Dag dag!',       fx: 'zwaai',  anim: 'zwaai' },
+  { key: 'rennen',   name: 'rennen',   say: 'Rennen!',   question: 'Ren jij ook?',                  fx: 'rennen', anim: 'ren' },
+  { key: 'draaien',  name: 'draaien',  say: 'Draaien!',  question: 'Draai jij ook een rondje?',     fx: 'draai',  anim: 'draai' }
+];
+
+/* Stickers: namen van tekeningen die als sticker geplakt kunnen worden */
+export const STICKERS = [
+  { key: 'ster', name: 'ster' }, { key: 'hart', name: 'hart' }, { key: 'bloem', name: 'bloem' }, { key: 'vlinder', name: 'vlinder' },
+  { key: 'zon', name: 'zon' }, { key: 'eend', name: 'eend' }, { key: 'kat', name: 'kat' }, { key: 'hond', name: 'hond' },
+  { key: 'bal', name: 'bal' }, { key: 'appel', name: 'appel' }, { key: 'auto', name: 'auto' }, { key: 'kikker', name: 'kikker' }
+];
+
 export const FACE_PARTS = [
   { key: 'neus', name: 'neus', question: 'Waar is jouw neus?' },
   { key: 'oog', name: 'oog', question: 'Waar zijn jouw ogen?' },
@@ -114,6 +153,11 @@ export function recordableItems(childName) {
   CHAPTERS.forEach((c) => c.words.forEach((w) => { if (!seen.has(w.key)) { seen.add(w.key); words.push({ key: w.key, label: w.name, text: w.name }); } }));
   groups.push({ title: 'Woorden', items: words });
   groups.push({ title: 'Gezichtje', items: FACE_PARTS.map((p) => ({ key: p.key, label: p.name, text: p.name })) });
+  groups.push({ title: 'Instrumenten', items: INSTRUMENTS.map((i) => ({ key: i.key, label: i.name, text: i.name })) });
+  groups.push({ title: 'Doe mee', items: MOVES.map((m) => ({ key: m.key, label: m.say, text: m.say })) });
+  groups.push({ title: 'Stickers', items: STICKERS.filter((s) => !seen.has(s.key)).map((s) => ({ key: s.key, label: s.name, text: s.name })) });
+  // Liedjes mogen langer: tot dertig seconden zingen
+  groups.push({ title: 'Liedjes (zing het zelf in, tot 30 seconden)', items: SONGS.map((s) => ({ key: s.key, label: s.title, text: s.title, max: 30000 })) });
   return groups;
 }
 
