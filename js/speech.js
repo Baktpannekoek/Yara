@@ -17,9 +17,12 @@ function pickVoice() {
   if (!('speechSynthesis' in window)) return;
   voices = window.speechSynthesis.getVoices() || [];
   const nl = voices.filter((v) => (v.lang || '').toLowerCase().replace('_', '-').startsWith('nl'));
+  const nlnl = nl.filter((v) => /nl-nl/i.test(v.lang));
+  // De betere stemmen van iOS staan in de voiceURI als premium of enhanced
   nlVoice =
-    nl.find((v) => /nl-nl/i.test(v.lang) && /xander|claire|ellen|siri|premium|enhanced|verbeterd/i.test(v.name)) ||
-    nl.find((v) => /nl-nl/i.test(v.lang)) ||
+    nlnl.find((v) => /premium|enhanced/i.test(v.voiceURI || '')) ||
+    nlnl.find((v) => /xander|claire|ellen|siri|premium|enhanced|verbeterd/i.test(v.name)) ||
+    nlnl[0] ||
     nl[0] || null;
 }
 
@@ -70,6 +73,7 @@ export async function loadOne(key) {
 }
 
 export function forget(key) { buffers.delete(key); }
+export function setBuffer(key, buffer) { buffers.set(key, buffer); }
 export function hasRecording(key) { return buffers.has(key); }
 export function recordingCount() { return buffers.size; }
 

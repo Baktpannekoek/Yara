@@ -141,6 +141,8 @@ svg { display: block; overflow: visible; }
 .anim-appear { animation: appear 600ms var(--ease-soft) both; }
 .breathe { animation: breathe 5s ease-in-out infinite; }
 .bob { animation: bob 4s ease-in-out infinite; }
+/* De tik-animatie wint het van het deinen, anders zie je de tik niet */
+.bob.anim-pop, .breathe.anim-pop { animation: pop var(--tap-ms) var(--ease-soft); }
 
 /* Startscherm */
 .start-sun { width: min(60vmin, 420px); height: min(60vmin, 420px); }
@@ -151,17 +153,21 @@ svg { display: block; overflow: visible; }
   animation: bob 3s ease-in-out infinite;
 }
 
-/* De wereld: tegels */
+/* De wereld: tegels. Flex met omloop, zodat een onvolledige laatste rij gecentreerd staat.
+   Liggend vier per rij, staand twee per rij. De breedte is ook aan de hoogte gebonden. */
 .world-grid {
   position: relative;
   z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 3vmin;
-  width: min(92vw, 860px, 112vh);
+  width: min(92vw, 1000px, 150vh);
 }
+.tile { width: calc((100% - 9vmin) / 4); }
 @media (orientation: portrait) {
-  .world-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); width: min(92vw, 560px, 56vh); }
+  .world-grid { width: min(92vw, 560px, 42vh); }
+  .tile { width: calc((100% - 3vmin) / 2); }
 }
 .tile {
   aspect-ratio: 1 / 1;
@@ -170,11 +176,11 @@ svg { display: block; overflow: visible; }
   box-shadow: 0 6px 18px rgba(0,0,0,.07);
   display: grid;
   place-items: center;
-  padding: 10%;
+  padding: 0;   /* geen procentuele padding: in een flex-rij rekent die met de rijbreedte */
   transition: transform 220ms var(--ease-soft);
 }
 .tile:active { transform: scale(.95); }
-.tile svg { width: 100%; height: 100%; }
+.tile svg { width: 78%; height: 78%; }
 
 /* Boerderij */
 .farm-wrap { position: relative; width: min(90vmin, 92vw, 700px, 76vh); aspect-ratio: 1 / 1; }
@@ -407,8 +413,8 @@ svg { display: block; overflow: visible; }
 .gate-hold span { position: relative; }
 .gate-answers { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 12px; }
 .rec-list { display: flex; flex-direction: column; }
-.rec-item, .photo-item { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #eef0f3; }
-.rec-item .name, .photo-item .name { flex: 1; font-weight: 600; }
+.rec-item, .photo-item { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #eef0f3; }
+.rec-item .name, .photo-item .name { flex: 1 1 40%; font-weight: 600; }
 .rec-item .status, .photo-item .status { font-size: 13px; color: var(--ink-soft); min-width: 64px; }
 .rec-item .btn, .photo-item .btn { padding: 8px 12px; font-size: 14px; }
 .rec-section { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); margin: 14px 0 2px; }

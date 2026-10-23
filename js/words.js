@@ -15,6 +15,34 @@ export const ANIMALS = [
   { key: 'vogel',   name: 'vogel',   sound: 'tjilp',    question: 'Wat zegt de vogel?' }
 ];
 
+/* Wilde dieren en voertuigen: dezelfde kiekeboe als de boerderij, met een ander gebouw */
+export const WILD = [
+  { key: 'leeuw',    name: 'leeuw',    sound: 'rrroar',     question: 'Wat zegt de leeuw?' },
+  { key: 'olifant',  name: 'olifant',  sound: 'toeoeoet',   question: 'Wat doet de olifant met zijn slurf?' },
+  { key: 'aap',      name: 'aap',      sound: 'oe oe aa',   question: 'Wat zegt de aap?' },
+  { key: 'giraf',    name: 'giraf',    sound: 'mmm',        question: 'Wat een lange nek! Waar is de nek?' },
+  { key: 'zebra',    name: 'zebra',    sound: 'hihi',       question: 'Zie je de strepen van de zebra?' },
+  { key: 'krokodil', name: 'krokodil', sound: 'klak klak',  question: 'Wat doet de krokodil met zijn bek?' }
+];
+
+export const VEHICLES = [
+  { key: 'auto',          name: 'auto',          sound: 'toet toet',        question: 'Wat doet de auto?' },
+  { key: 'vliegtuig',     name: 'vliegtuig',     sound: 'zoef',             question: 'Waar vliegt het vliegtuig heen?' },
+  { key: 'trein',         name: 'trein',         sound: 'tsjoeke tsjoeke',  question: 'Wat zegt de trein?' },
+  { key: 'bus',           name: 'bus',           sound: 'toeoet',           question: 'Wie zit er in de bus?' },
+  { key: 'tractor',       name: 'tractor',       sound: 'put put put',      question: 'Wat doet de tractor?' },
+  { key: 'boot',          name: 'boot',          sound: 'toeoeoet',         question: 'Waar vaart de boot?' },
+  { key: 'brandweerauto', name: 'brandweerauto', sound: 'tatu tata',        question: 'Wat zegt de brandweerauto?' },
+  { key: 'fiets',         name: 'fiets',         sound: 'tring tring',      question: 'Wat doet de bel van de fiets?' }
+];
+
+/* De drie kiekeboe-plekjes: gebouw, deuren en de dingen die erachter zitten */
+export const SETS = {
+  farm:     { key: 'farm',     title: 'Boerderij',    items: ANIMALS,  building: 'barn',   door: 'barnDoor',   hint: 'Wie zit er in de schuur? Tik maar!' },
+  wild:     { key: 'wild',     title: 'Wilde dieren', items: WILD,     building: 'jungle', door: 'leafDoor',   hint: 'Wie zit er in de struiken? Tik maar!' },
+  vehicles: { key: 'vehicles', title: 'Voertuigen',   items: VEHICLES, building: 'garage', door: 'garageDoor', hint: 'Wat staat er in de garage? Tik maar!' }
+};
+
 export const CHAPTERS = [
   {
     key: 'dieren', icon: 'hond',
@@ -74,9 +102,14 @@ export function recordableItems(childName) {
   const seen = new Set();
   const groups = [];
   groups.push({ title: 'Begroeting', items: [{ key: GREETING_KEY, label: `"Hoi ${childName}!"`, text: `Hoi ${childName}!` }] });
-  groups.push({ title: 'Dieren (naam)', items: ANIMALS.map((a) => ({ key: a.key, label: a.name, text: a.name })) });
-  groups.push({ title: 'Dieren (geluid)', items: ANIMALS.map((a) => ({ key: 'geluid-' + a.key, label: `${a.name}: "${a.sound}"`, text: a.sound })) });
-  ANIMALS.forEach((a) => seen.add(a.key));
+  const addSet = (title, items) => {
+    groups.push({ title: `${title} (naam)`, items: items.map((a) => ({ key: a.key, label: a.name, text: a.name })) });
+    groups.push({ title: `${title} (geluid)`, items: items.map((a) => ({ key: 'geluid-' + a.key, label: `${a.name}: "${a.sound}"`, text: a.sound })) });
+    items.forEach((a) => seen.add(a.key));
+  };
+  addSet('Boerderij', ANIMALS);
+  addSet('Wilde dieren', WILD);
+  addSet('Voertuigen', VEHICLES);
   const words = [];
   CHAPTERS.forEach((c) => c.words.forEach((w) => { if (!seen.has(w.key)) { seen.add(w.key); words.push({ key: w.key, label: w.name, text: w.name }); } }));
   groups.push({ title: 'Woorden', items: words });

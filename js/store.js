@@ -21,6 +21,8 @@ function openDb() {
       const db = req.result;
       // Een nieuwere versie in een ander tabblad: deze verbinding loslaten, de volgende aanroep opent opnieuw
       db.onversionchange = () => { db.close(); dbPromise = null; };
+      // Safari sluit de verbinding soms zelf na een tijd op de achtergrond
+      db.onclose = () => { dbPromise = null; };
       resolve(db);
     };
     req.onerror = () => { dbPromise = null; reject(req.error); };
@@ -28,9 +30,18 @@ function openDb() {
   return dbPromise;
 }
 
-function tx(store, mode, fn) {
+function tx(store, mode, fn, retry = true) {
   return openDb().then((db) => new Promise((resolve, reject) => {
-    const t = db.transaction(store, mode);
+    let t;
+    try {
+      t = db.transaction(store, mode);
+    } catch (e) {
+      // Verbinding stilletjes gesloten: één keer opnieuw openen en het nog eens proberen
+      dbPromise = null;
+      if (retry) { resolve(tx(store, mode, fn, false)); return; }
+      reject(e);
+      return;
+    }
     const s = t.objectStore(store);
     const req = fn(s);
     t.oncomplete = () => resolve(req && req.result);
@@ -43,7 +54,7 @@ export const DEFAULTS = {
   childName: 'Yara',
   sessionMinutes: 10,     // 0 = geen einde
   volume: 0.8,
-  scenes: { farm: true, music: true, bubbles: true, book: true, face: true }
+  scenes: { farm: true, wild: true, vehicles: true, music: true, bubbles: true, book: true, face: true }
 };
 
 let cache = { ...DEFAULTS, scenes: { ...DEFAULTS.scenes } };

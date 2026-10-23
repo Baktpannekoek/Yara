@@ -21,11 +21,13 @@ export default {
     ctx.onTap(sunEl, () => {
       if (started) return;
       started = true;
-      // Alles wat een gebaar nodig heeft, meteen en in deze volgorde: geluid, stem, begroeting
+      // Alles wat een gebaar nodig heeft, meteen: geluid en stem ontgrendelen
       ctx.audio.unlock();
-      ctx.say(GREETING_KEY, `Hoi ${ctx.childName}!`);
       ctx.speech.prime();
       ctx.audio.chime();
+      // De begroeting wacht hooguit anderhalve seconde tot de opnames geladen zijn
+      const greet = () => ctx.say(GREETING_KEY, `Hoi ${ctx.childName}!`);
+      Promise.race([ctx.ready || Promise.resolve(), new Promise((r) => setTimeout(r, 1500))]).then(greet, greet);
       ctx.animate(sunEl, 'anim-pop');
       ctx.startSession();
       setTimeout(() => ctx.go('world'), 1300);

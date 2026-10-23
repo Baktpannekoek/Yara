@@ -68,7 +68,12 @@ export default {
       ctx.setHint(`Zeg maar: ${w.name}`);
     }
 
+    let lastSay = 0;
     ctx.onTap(pageEl, () => {
+      // Rem: snel tikken stapelt anders stemmen over elkaar
+      const t = performance.now();
+      if (t - lastSay < 700) return;
+      lastSay = t;
       const w = word();
       ctx.animate(pic, w.fx === 'boing' ? 'anim-bounce' : 'anim-wiggle');
       ctx.say(w.key, w.name);
@@ -90,9 +95,15 @@ export default {
     show(false);
 
     // Foto's van eigen spullen ophalen. Pas als er minstens één is, komt het hoofdstuk met de camera erbij.
-    listPhotos().then((photos) => {
+    listPhotos().then(async (photos) => {
       if (!root.isConnected || !photos.length) return;
-      const withUrls = photos.map((p) => ({ ...p, url: URL.createObjectURL(p.blob) }));
+      // De blob opnieuw in het geheugen zetten: op iOS 17.4 blijft een blob-URL uit IndexedDB anders leeg
+      const withUrls = await Promise.all(photos.map(async (p) => {
+        let blob = p.blob;
+        try { blob = new Blob([await p.blob.arrayBuffer()], { type: p.blob.type }); } catch {}
+        return { ...p, url: URL.createObjectURL(blob) };
+      }));
+      if (!root.isConnected) return;
       urls = withUrls.map((p) => p.url);
       chapters = [...CHAPTERS, photoChapter(withUrls)];
       renderChips();

@@ -62,7 +62,12 @@ export default {
     }
     applyVariant();
 
+    let lastSay = 0;
     ctx.onTap(wrap, (e) => {
+      // Rem: snel tikken stapelt anders stemmen over elkaar
+      const t = performance.now();
+      if (t - lastSay < 700) return;
+      lastSay = t;
       const target = e.target.closest ? e.target.closest('[data-part]') : null;
       if (!target) {
         // Tik naast de onderdelen: een ander gezichtje

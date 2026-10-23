@@ -67,6 +67,8 @@ export function isReady() { return !!ctx && ctx.state === 'running' && mediaOk; 
 
 /* Aanroepen vanuit een echte tik (touchend of click telt zeker, pointerdown meestal) */
 export function unlock() {
+  // iOS 17 en nieuwer: de audiosessie expliciet op afspelen, dan telt de belschakelaar niet
+  if ('audioSession' in navigator) { try { navigator.audioSession.type = 'playback'; } catch {} }
   ensureContext();
   if (ctx.state !== 'running') ctx.resume().catch(() => {});
   // Stille buffer afspelen: de klassieke iOS-ontgrendeling van Web Audio
@@ -82,8 +84,33 @@ export function unlock() {
 }
 
 export function resume() {
+  checkAlive();
   if (ctx && ctx.state !== 'running') ctx.resume().catch(() => {});
   if (media && media.paused) ensureMedia();
+}
+
+/* iOS-valkuil: na wisselen van app of vergrendelen meldt de context soms 'running'
+   terwijl de klok stilstaat en er niets meer klinkt. Bij elke tik kijken we of de
+   klok sinds de vorige tik is opgeschoven. Zo niet, dan bouwen we de context opnieuw.
+   Opgenomen stemmen blijven bruikbaar: een AudioBuffer hangt niet aan een context. */
+let lastClock = -1;
+let lastStamp = 0;
+function checkAlive() {
+  if (!ctx) return;
+  const nowMs = performance.now();
+  const frozen = ctx.state === 'running' && lastClock >= 0 && nowMs - lastStamp > 400 && ctx.currentTime === lastClock;
+  if (frozen) {
+    console.warn('Audio stond stil, context opnieuw opgebouwd');
+    try { ctx.close(); } catch {}
+    ctx = null; master = null; melodyBus = null;
+    ensureContext();
+    if (ctx.state !== 'running') ctx.resume().catch(() => {});
+    lastClock = -1;
+    lastStamp = nowMs;
+    return;
+  }
+  lastClock = ctx.currentTime;
+  lastStamp = nowMs;
 }
 
 export function setVolume(v) {
@@ -93,9 +120,10 @@ export function setVolume(v) {
 
 function now() { return ctx ? ctx.currentTime : 0; }
 
-/* Basis: een oscillator met zachte envelope */
-function voice({ type = 'triangle', freq = 440, dur = 0.4, gain = 0.3, attack = 0.02, release = 0.15,
-                 when = 0, glide = null, lp = null, bp = null, vib = null, am = null }) {
+/* Basis: een oscillator met zachte envelope. Geëxporteerd zodat extra geluiden in
+   andere bestanden dezelfde bouwstenen gebruiken. */
+export function voice({ type = 'triangle', freq = 440, dur = 0.4, gain = 0.3, attack = 0.02, release = 0.15,
+                 when = 0, glide = null, lp = null, bp = null, vib = null, am = null, dest = null }) {
   if (!ctx) return;
   const t0 = now() + when;
   const osc = ctx.createOscillator();
@@ -119,23 +147,30 @@ function voice({ type = 'triangle', freq = 440, dur = 0.4, gain = 0.3, attack = 
   g.gain.setValueAtTime(gain, t0 + Math.max(attack, dur - release));
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + release);
   if (am) {
+    // Trilling in serie: het signaal wordt vermenigvuldigd met (1 - depth) + depth * sin,
+    // zodat de envelope van g de echte sterkte blijft bepalen
+    const depth = Math.min(0.5, am.depth);
     const lfo = ctx.createOscillator();
     lfo.frequency.value = am.rate;
+    const base = ctx.createGain();
+    base.gain.value = 1 - depth;
     const lg = ctx.createGain();
-    lg.gain.value = am.depth;
+    lg.gain.value = depth;
     lfo.connect(lg);
-    lg.connect(g.gain);
+    lg.connect(base.gain);
+    node.connect(base);
+    node = base;
     lfo.start(t0); lfo.stop(t0 + dur + release + 0.1);
   }
   node.connect(g);
-  g.connect(master);
+  g.connect(dest || master);
   osc.start(t0);
   osc.stop(t0 + dur + release + 0.1);
   return osc;
 }
 
 /* Ruisstoot, voor plop, trommel en knorren */
-function noise({ dur = 0.15, gain = 0.3, attack = 0.005, when = 0, bp = null, lp = null, hp = null }) {
+export function noise({ dur = 0.15, gain = 0.3, attack = 0.005, when = 0, bp = null, lp = null, hp = null }) {
   if (!ctx) return;
   const t0 = now() + when;
   const len = Math.ceil(ctx.sampleRate * (dur + 0.05));
@@ -266,12 +301,12 @@ export const animals = {
   varken() {
     [0, 0.35].forEach((w) => {
       noise({ dur: 0.28, gain: 0.36, bp: { freq: 950, q: 1.5 }, when: w });
-      voice({ type: 'sawtooth', freq: 190, dur: 0.25, gain: 0.14, attack: 0.02, release: 0.1, lp: 1500, am: { rate: 28, depth: 0.7 }, when: w });
+      voice({ type: 'sawtooth', freq: 190, dur: 0.25, gain: 0.14, attack: 0.02, release: 0.1, lp: 1500, am: { rate: 28, depth: 0.5 }, when: w });
     });
   },
   kikker() {
-    voice({ type: 'square', freq: 190, glide: { to: 150, time: 0.4 }, dur: 0.4, gain: 0.22, attack: 0.02, release: 0.1, lp: 2200, am: { rate: 26, depth: 0.6 } });
-    voice({ type: 'square', freq: 210, glide: { to: 160, time: 0.3 }, dur: 0.3, gain: 0.2, attack: 0.02, release: 0.1, lp: 2200, am: { rate: 26, depth: 0.6 }, when: 0.5 });
+    voice({ type: 'square', freq: 190, glide: { to: 150, time: 0.4 }, dur: 0.4, gain: 0.22, attack: 0.02, release: 0.1, lp: 2200, am: { rate: 26, depth: 0.5 } });
+    voice({ type: 'square', freq: 210, glide: { to: 160, time: 0.3 }, dur: 0.3, gain: 0.2, attack: 0.02, release: 0.1, lp: 2200, am: { rate: 26, depth: 0.5 }, when: 0.5 });
   },
   vogel() {
     [0, 0.14, 0.3, 0.42].forEach((w, i) => voice({ type: 'sine', freq: 2200 + (i % 2) * 400, glide: { to: 3000 + (i % 2) * 300, time: 0.08 }, dur: 0.08, gain: 0.14, attack: 0.005, release: 0.05, when: w }));
@@ -316,15 +351,19 @@ const LULLABY = [
 ];
 
 let melodyTimer = null;
+let melodyBus = null;   // eigen kanaal, zodat het liedje echt stopt bij een tik op de maan
 
 export function playLullaby({ beat = 0.75, gain = 0.2, onDone } = {}) {
   stopMelody();
   if (!ctx) return;
+  melodyBus = ctx.createGain();
+  melodyBus.connect(master);
+  const dest = melodyBus;
   let t = 0.3;
   LULLABY.forEach(([n, len]) => {
     const dur = len * beat;
-    voice({ type: 'sine', freq: N[n], dur: dur * 0.85, gain, attack: 0.08, release: 0.5, when: t });
-    voice({ type: 'triangle', freq: N[n] / 2, dur: dur * 0.85, gain: gain * 0.35, attack: 0.1, release: 0.5, when: t, lp: 600 });
+    voice({ type: 'sine', freq: N[n], dur: dur * 0.85, gain, attack: 0.08, release: 0.5, when: t, dest });
+    voice({ type: 'triangle', freq: N[n] / 2, dur: dur * 0.85, gain: gain * 0.35, attack: 0.1, release: 0.5, when: t, lp: 600, dest });
     t += dur;
   });
   melodyTimer = setTimeout(() => { melodyTimer = null; if (onDone) onDone(); }, (t + 1.5) * 1000);
@@ -333,4 +372,12 @@ export function playLullaby({ beat = 0.75, gain = 0.2, onDone } = {}) {
 
 export function stopMelody() {
   if (melodyTimer) { clearTimeout(melodyTimer); melodyTimer = null; }
+  if (melodyBus && ctx) {
+    const bus = melodyBus;
+    melodyBus = null;
+    try {
+      bus.gain.setTargetAtTime(0, ctx.currentTime, 0.1);
+      setTimeout(() => { try { bus.disconnect(); } catch {} }, 700);
+    } catch {}
+  }
 }

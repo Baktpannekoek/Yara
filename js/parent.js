@@ -4,6 +4,7 @@ import { settings, setSetting, putRecording, deleteRecording, putPhoto, deletePh
 import { recordableItems, photoKey, isBuiltinKey } from './words.js';
 import * as speech from './speech.js';
 import * as audio from './audio.js';
+import { mountBackupUI } from './backup.js';
 
 const overlay = document.getElementById('overlay');
 const HOLD_MS = 3000;
@@ -37,16 +38,16 @@ export function openGate(ctx) {
     </div>`;
   const hold = overlay.querySelector('#hold');
   const fill = hold.querySelector('.fill');
-  let t0 = 0, raf = null;
+  let t0 = 0, ticker = null;
 
+  // Met een gewone timer, niet met requestAnimationFrame: die staat stil als iOS het scherm even niet tekent
   function tick() {
     const p = Math.min(1, (performance.now() - t0) / HOLD_MS);
     fill.style.width = `${p * 100}%`;
-    if (p >= 1) { stop(); askSum(ctx); return; }
-    raf = requestAnimationFrame(tick);
+    if (p >= 1) { stop(); askSum(ctx); }
   }
-  function start(e) { e.preventDefault(); t0 = performance.now(); cancelAnimationFrame(raf); tick(); }
-  function stop() { cancelAnimationFrame(raf); fill.style.width = '0'; }
+  function start(e) { e.preventDefault(); t0 = performance.now(); clearInterval(ticker); ticker = setInterval(tick, 50); }
+  function stop() { clearInterval(ticker); ticker = null; fill.style.width = '0'; }
 
   hold.addEventListener('pointerdown', start);
   hold.addEventListener('pointerup', stop);
@@ -92,11 +93,22 @@ let stream = null;
 let recorder = null;
 let recTimer = null;
 
-function stopStream() {
-  if (recorder && recorder.state !== 'inactive') { try { recorder.stop(); } catch {} }
-  recorder = null;
+function isStandaloneApp() { return window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches; }
+function isIosDevice() { return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+
+/* Microfoon loslaten. Zolang hij open staat zet iOS de audiosessie in de opnamestand en
+   klinkt alles op half volume. Op iOS 17 en nieuwer zetten we de sessie ook expliciet terug. */
+function releaseMic() {
   if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; }
+  if ('audioSession' in navigator) { try { navigator.audioSession.type = 'playback'; } catch {} }
+}
+
+function stopStream() {
+  // Loopt er nog een opname? Dan netjes stoppen, onstop bewaart hem en ruimt op.
+  if (recorder && recorder.state === 'recording') { try { recorder.stop(); } catch {} return; }
+  recorder = null;
   clearTimeout(recTimer);
+  releaseMic();
 }
 
 function pickMime() {
@@ -114,6 +126,7 @@ export function openMenu(ctx) {
     <div class="panel">
       <h2>Instellingen</h2>
       <p class="muted">Alles blijft op dit apparaat. Niets gaat naar internet.</p>
+      ${isIosDevice() && !isStandaloneApp() ? `<p class="muted" style="color:#8a1c1c">Je gebruikt de app nu in Safari. Opnames, foto's en instellingen die je hier maakt zie je niet in de app op het beginscherm. Zet de app eerst op het beginscherm (Delen, dan "Zet op beginscherm") en maak ze daar.</p>` : ''}
 
       <div class="row"><label for="name">Naam</label><input type="text" id="name" value="${escapeHtml(s.childName)}" maxlength="20" autocomplete="off"></div>
       <div class="row"><label for="minutes">Speelduur</label>
@@ -124,6 +137,8 @@ export function openMenu(ctx) {
 
       <h3>Plekjes</h3>
       <div class="row"><label>Boerderij</label><input class="toggle" type="checkbox" data-scene="farm" ${s.scenes.farm !== false ? 'checked' : ''}></div>
+      <div class="row"><label>Wilde dieren</label><input class="toggle" type="checkbox" data-scene="wild" ${s.scenes.wild !== false ? 'checked' : ''}></div>
+      <div class="row"><label>Voertuigen</label><input class="toggle" type="checkbox" data-scene="vehicles" ${s.scenes.vehicles !== false ? 'checked' : ''}></div>
       <div class="row"><label>Muziek</label><input class="toggle" type="checkbox" data-scene="music" ${s.scenes.music !== false ? 'checked' : ''}></div>
       <div class="row"><label>Bellen</label><input class="toggle" type="checkbox" data-scene="bubbles" ${s.scenes.bubbles !== false ? 'checked' : ''}></div>
       <div class="row"><label>Prentenboek</label><input class="toggle" type="checkbox" data-scene="book" ${s.scenes.book !== false ? 'checked' : ''}></div>
@@ -147,10 +162,13 @@ export function openMenu(ctx) {
 
       <h3>Jullie eigen stem</h3>
       <p>Spreek woorden en dierengeluiden zelf in. Een bekende stem houdt haar aandacht beter vast dan een computerstem. Zonder opname gebruikt de app de Nederlandse stem van het apparaat${speech.hasDutchVoice() ? '' : ' (nog niet gevonden: zet in Instellingen > Toegankelijkheid > Gesproken materiaal een Nederlandse stem aan)'}.</p>
-      ${canRecord ? '' : '<p class="muted">Opnemen werkt niet in deze browser. Op een iPhone of iPad werkt het in Safari.</p>'}
+      ${canRecord ? '' : '<p class="muted">Opnemen werkt niet in deze browser. Op een iPhone of iPad werkt het in de app op het beginscherm.</p>'}
+      <p class="muted">Vraagt de iPhone om toestemming voor de microfoon? Tik op Sta toe. Heb je eerder geweigerd, zet het dan aan via Instellingen > Safari > Microfoon.</p>
       <div class="rec-list" id="rec-list">
         ${groups.map((g) => `<div class="rec-section">${g.title}</div>${g.items.map((it) => recRow(it, canRecord)).join('')}`).join('')}
       </div>
+
+      <div id="backup-ui"></div>
 
       <h3>Tips voor samen spelen</h3>
       <p>Zit erbij, benoem wat ze ziet en herhaal haar woorden. Een paar minuten per keer is genoeg. De app stopt vanzelf met een slaapliedje.</p>
@@ -195,6 +213,9 @@ export function openMenu(ctx) {
   });
 
   wirePhotos(canRecord);
+  try {
+    mountBackupUI(overlay.querySelector('#backup-ui'), { audio, refreshMenu: () => { revokePhotoUrls(); openMenu(ctx); } });
+  } catch (e) { console.warn('Back-up niet beschikbaar', e); }
 
   overlay.querySelector('#wipe').addEventListener('click', async () => {
     if (!confirm("Alle opnames, foto's en instellingen wissen?")) return;
@@ -218,46 +239,66 @@ async function toggleRecord(key, btn, status, refresh) {
   if (recorder && recorder.state === 'recording') { recorder.stop(); return; }
   // Andere knoppen die nog op "Stop" staan terugzetten
   overlay.querySelectorAll('.btn.recording').forEach((b) => { b.classList.remove('recording'); b.textContent = 'Opnemen'; });
+  if (stream && !stream.active) stream = null;
   try {
-    if (!stream) stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    if ('audioSession' in navigator) { try { navigator.audioSession.type = 'play-and-record'; } catch {} }
+    if (!stream) {
+      status.textContent = 'microfoon aan…';
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    }
   } catch (e) {
-    status.textContent = 'geen microfoon';
+    status.textContent = e && e.name === 'NotAllowedError' ? 'geen toestemming' : 'geen microfoon';
     console.warn(e);
+    releaseMic();
     return;
   }
   const mime = pickMime();
   const chunks = [];
+  let rec = null;
   try {
-    recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+    rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
   } catch (e) {
-    recorder = new MediaRecorder(stream);
+    try { rec = new MediaRecorder(stream); } catch (e2) { status.textContent = 'opnemen lukt niet'; releaseMic(); return; }
   }
-  recorder.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
-  recorder.onstop = async () => {
+  recorder = rec;
+  rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+  // Knop, status en de grens van vier seconden pas als de microfoon echt loopt
+  rec.onstart = () => {
+    btn.classList.add('recording');
+    btn.textContent = 'Stop';
+    status.textContent = 'opnemen…';
+    recTimer = setTimeout(() => { if (rec.state === 'recording') rec.stop(); }, MAX_REC_MS);
+  };
+  rec.onstop = async () => {
     clearTimeout(recTimer);
+    releaseMic();
+    if (recorder === rec) recorder = null;
     btn.classList.remove('recording');
     btn.textContent = 'Opnemen';
-    const type = recorder.mimeType || mime || 'audio/mp4';
-    recorder = null;
+    const type = rec.mimeType || mime || 'audio/mp4';
     const blob = new Blob(chunks, { type });
     if (blob.size < 200) { status.textContent = 'te kort'; return; }
     status.textContent = 'opslaan…';
     try {
+      // Eerst controleren dat de opname afspeelbaar is, dan pas bewaren
+      const buffer = await audio.decode(blob);
       await putRecording(key, blob);
-      const ok = await speech.loadOne(key);
-      if (!ok) { status.textContent = 'mislukt'; return; }
+      speech.setBuffer(key, buffer);
       refresh();
       speech.say(key, '');
     } catch (e) {
       console.warn(e);
-      status.textContent = 'mislukt';
+      status.textContent = 'mislukt, probeer nog eens';
     }
   };
-  recorder.start();
-  btn.classList.add('recording');
-  btn.textContent = 'Stop';
-  status.textContent = 'opnemen…';
-  recTimer = setTimeout(() => { if (recorder && recorder.state === 'recording') recorder.stop(); }, MAX_REC_MS);
+  try {
+    rec.start();
+  } catch (e) {
+    console.warn(e);
+    status.textContent = 'mislukt';
+    if (recorder === rec) recorder = null;
+    releaseMic();
+  }
 }
 
 /* ---------- Mijn spullen: foto's van eigen spullen ---------- */
@@ -321,8 +362,17 @@ function wirePhotos(canRecord) {
 
   async function renderList() {
     const photos = await listPhotos();
+    // De blob opnieuw in het geheugen zetten: op iOS 17.4 blijft een blob-URL uit IndexedDB anders leeg
+    const rows = await Promise.all(photos.map(async (p) => {
+      let blob = p.blob;
+      try { blob = new Blob([await p.blob.arrayBuffer()], { type: p.blob.type }); } catch {}
+      const url = URL.createObjectURL(blob);
+      photoUrls.push(url);
+      return photoRow(p, url, canRecord);
+    }));
+    if (!overlay.contains(list)) return;
     list.innerHTML = photos.length
-      ? photos.map((p) => { const url = URL.createObjectURL(p.blob); photoUrls.push(url); return photoRow(p, url, canRecord); }).join('')
+      ? rows.join('')
       : "<p class=\"muted\">Nog geen foto's. Zodra er één is, krijgt het prentenboek een hoofdstuk met een camera.</p>";
     list.querySelectorAll('.photo-item').forEach((row) => {
       const { id, key, text } = row.dataset;

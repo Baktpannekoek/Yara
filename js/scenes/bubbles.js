@@ -15,6 +15,11 @@ export default {
     let spawnTimer = null;
 
     function vmin() { return Math.min(window.innerWidth, window.innerHeight) / 100; }
+    // De veilige randen (notch, ronde hoeken) zitten al in de padding van het scherm
+    function pad() {
+      const cs = getComputedStyle(root);
+      return { l: parseFloat(cs.paddingLeft) || 0, r: parseFloat(cs.paddingRight) || 0 };
+    }
 
     function spawn() {
       if (!alive) return;
@@ -24,7 +29,8 @@ export default {
       const el = document.createElement('div');
       el.className = 'bubble';
       el.style.setProperty('--size', `${size}px`);
-      const x = Math.random() * (window.innerWidth - size);
+      const p = pad();
+      const x = p.l + Math.random() * Math.max(0, window.innerWidth - p.l - p.r - size);
       el.style.left = `${x}px`;
       el.style.top = `${window.innerHeight}px`;
       const hasFlyer = spawned % 4 === 0;

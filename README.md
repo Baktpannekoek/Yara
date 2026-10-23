@@ -9,7 +9,7 @@ Link: https://baktpannekoek.github.io/Yara/
 1. Open de link in Safari.
 2. Tik op de knop Delen (het vierkant met de pijl omhoog).
 3. Kies "Zet op beginscherm" en tik op Voeg toe.
-4. Open de app vanaf het beginscherm. Hij vult dan het hele scherm en werkt ook zonder internet.
+4. Open de app één keer vanaf het beginscherm terwijl je internet hebt. Hij vult dan het hele scherm. Vanaf de tweede keer werkt hij ook zonder internet.
 
 ## Vergrendelen zodat ze de app niet kan verlaten
 
@@ -23,6 +23,8 @@ Gebruik "Begeleide toegang" van iOS.
 ## Wat erin zit
 
 - **Boerderij**: kiekeboe. Tik op de schuur, de deur gaat open en er komt een dier tevoorschijn met zijn geluid en zijn naam. Tik op het dier voor nog een keer, tik ergens anders voor het volgende dier.
+- **Wilde dieren**: dezelfde kiekeboe in de jungle, met leeuw, olifant, aap, giraf, zebra en krokodil.
+- **Voertuigen**: kiekeboe in de garage, met auto, vliegtuig, trein, bus, tractor, boot, brandweerauto en fiets, elk met een eigen geluid.
 - **Muziekhoek**: zes vormen met tonen die altijd mooi samen klinken, plus een trommel en een belletje.
 - **Bellenweide**: zeepbellen die langzaam opstijgen. Een tik laat ze ploppen.
 - **Prentenboek**: één groot voorwerp per bladzijde, in vier hoofdstukken. De naam wordt uitgesproken bij elke tik.
@@ -34,13 +36,17 @@ Gebruik "Begeleide toegang" van iOS.
 
 Tik op het tandwieltje rechtsboven, houd de knop drie seconden ingedrukt en los de rekensom op. In het menu kun je elk woord en elk dierengeluid zelf inspreken. Een bekende stem houdt haar aandacht beter vast dan een computerstem. Zonder opname gebruikt de app de Nederlandse stem van iOS. Staat die er niet op? Instellingen > Toegankelijkheid > Gesproken materiaal > Stemmen > Nederlands.
 
+## Opnames bewaren en overzetten
+
+In het oudermenu staat "Opnames bewaren". Daarmee maak je één bestand met alle opnames, foto's en instellingen. Bewaar het in de Bestanden-app of in iCloud Drive, of deel het naar je andere apparaat. Op de iPad kies je in het oudermenu "Terugzetten uit bestand" en alles staat erop. Zo hoef je nooit opnieuw alles in te spreken.
+
 ## Haar eigen spullen
 
 Peuters herkennen hun eigen beer sneller dan een getekende. In het oudermenu maak je een foto van iets van haar, typt de naam erbij en spreekt die eventueel in. De foto komt in het prentenboek, in het hoofdstuk met de camera. Bij elke tik hoort ze de naam. Foto's worden verkleind opgeslagen op het apparaat.
 
 Opnames, foto's en instellingen blijven op het apparaat. Niets gaat naar internet.
 
-Let op: de app op het beginscherm en Safari delen hun opslag niet. Spreek de woorden dus in binnen de app op het beginscherm, dan blijven ze bewaard. Elke iPhone of iPad heeft zijn eigen opnames.
+Let op: de app op het beginscherm en Safari delen hun opslag niet. Spreek de woorden in en voeg foto's toe binnen de app op het beginscherm, niet in Safari. Dan blijven opnames, foto's en instellingen bewaard. Elke iPhone of iPad heeft zijn eigen opnames. Met "Opnames bewaren" in het oudermenu zet je ze over naar een ander apparaat.
 
 ## Geen geluid of traag geluid?
 

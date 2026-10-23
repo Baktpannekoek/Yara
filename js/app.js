@@ -8,14 +8,14 @@ import { openGate } from './parent.js';
 
 import start from './scenes/start.js';
 import world from './scenes/world.js';
-import farm from './scenes/farm.js';
+import { farm, wild, vehicles } from './scenes/kiekeboe.js';
 import music from './scenes/music.js';
 import bubbles from './scenes/bubbles.js';
 import book from './scenes/book.js';
 import face from './scenes/face.js';
 import sleep from './scenes/sleep.js';
 
-const SCENES = { start, world, farm, music, bubbles, book, face, sleep };
+const SCENES = { start, world, farm, wild, vehicles, music, bubbles, book, face, sleep };
 const NO_TOPBAR = new Set(['start', 'sleep']);
 
 const stage = document.getElementById('stage');
@@ -68,7 +68,13 @@ const session = {
   resume() {
     if (!this.remaining || this.timer) return;
     this.endAt = Date.now() + this.remaining;
-    this.timer = setTimeout(() => { this.timer = null; this.remaining = 0; go('sleep'); }, this.remaining);
+    this.timer = setTimeout(() => {
+      this.timer = null;
+      // Oudermenu open? Dan even wachten, anders begint het slaapliedje onder het opnemen door
+      if (!overlayEl.hidden) { this.remaining = 10000; this.resume(); return; }
+      this.remaining = 0;
+      go('sleep');
+    }, this.remaining);
   },
   pause() {
     if (this.timer) { clearTimeout(this.timer); this.timer = null; this.remaining = Math.max(0, this.endAt - Date.now()); }
@@ -101,6 +107,8 @@ function go(id) {
     try { old.scene.unmount && old.scene.unmount(); } catch (e) { console.warn(e); }
     old.el.classList.add('leaving');
     setTimeout(() => old.el.remove(), 420);
+    // Elke uitgang uit het slaapscherm (maan, of Klaar in het oudermenu) begint een nieuwe speeltijd
+    if (old.id === 'sleep' && id !== 'sleep') session.start();
   }
   const el = document.createElement('section');
   el.className = 'scene';
@@ -169,10 +177,13 @@ async function init() {
   await loadSettings();
   speech.init();
   audio.setVolume(settings().volume);
-  speech.loadRecordings().catch((e) => console.warn(e));
+  // Het startscherm wacht hier kort op, zodat de begroeting de opname van papa of mama pakt
+  ctx.ready = speech.loadRecordings().catch((e) => console.warn(e));
   go('start');
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    // Bij de allereerste installatie is herladen niet nodig; alleen bij een echte nieuwe versie
+    const hadController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
       .then((reg) => {
         // Bij elke terugkeer naar de app even kijken of er een nieuwe versie is
@@ -182,7 +193,7 @@ async function init() {
     // Nieuwe versie klaar: meteen herladen op het startscherm, anders zodra de app naar de achtergrond gaat
     let pendingReload = false;
     navigator.serviceWorker.addEventListener('message', (e) => {
-      if (!e.data || e.data.type !== 'nieuwe-versie') return;
+      if (!hadController || !e.data || e.data.type !== 'nieuwe-versie') return;
       if (!current || current.id === 'start') location.reload();
       else pendingReload = true;
     });

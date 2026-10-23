@@ -1,11 +1,15 @@
 /* De wereld: grote tegels naar de plekjes */
 
+import * as extra from '../art-extra.js';
+
 const TILES = [
-  { id: 'farm', icon: 'barnIcon', label: 'Boerderij' },
-  { id: 'music', icon: 'noteIcon', label: 'Muziek' },
-  { id: 'bubbles', icon: 'bubbleIcon', label: 'Bellen' },
-  { id: 'book', icon: 'bookIcon', label: 'Boek' },
-  { id: 'face', icon: 'faceIcon', label: 'Gezichtje' }
+  { id: 'farm', icon: (art) => art.barnIcon(), label: 'Boerderij' },
+  { id: 'wild', icon: () => extra.wildIcon(), label: 'Wilde dieren' },
+  { id: 'vehicles', icon: () => extra.vehicleIcon(), label: 'Voertuigen' },
+  { id: 'music', icon: (art) => art.noteIcon(), label: 'Muziek' },
+  { id: 'bubbles', icon: (art) => art.bubbleIcon(), label: 'Bellen' },
+  { id: 'book', icon: (art) => art.bookIcon(), label: 'Boek' },
+  { id: 'face', icon: (art) => art.faceIcon(), label: 'Gezichtje' }
 ];
 
 export default {
@@ -16,10 +20,13 @@ export default {
     root.innerHTML = `
       <div class="bg">${ctx.art.landscape()}</div>
       <div class="world-grid">
-        ${tiles.map((t, i) => `<div class="tile bob" style="animation-delay:${i * 0.4}s" data-go="${t.id}" aria-label="${t.label}">${ctx.art[t.icon]()}</div>`).join('')}
+        ${tiles.map((t, i) => `<div class="tile bob" style="animation-delay:${i * 0.4}s" data-go="${t.id}" aria-label="${t.label}">${t.icon(ctx.art)}</div>`).join('')}
       </div>`;
+    let left = false;   // twee snelle tikken bouwen een plekje anders twee keer op
     root.querySelectorAll('[data-go]').forEach((el) => {
       ctx.onTap(el, () => {
+        if (left) return;
+        left = true;
         ctx.audio.tap();
         ctx.animate(el, 'anim-pop');
         setTimeout(() => ctx.go(el.dataset.go), 250);

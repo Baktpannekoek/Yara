@@ -1,6 +1,6 @@
 /* Service worker: alles in de cache zodat de app offline werkt.
    Verhoog VERSION bij elke wijziging, dan haalt de app de nieuwe bestanden op. */
-const VERSION = 'yara-v4';
+const VERSION = 'yara-v5';
 const FILES = [
   './',
   './index.html',
@@ -13,9 +13,12 @@ const FILES = [
   './js/art.js',
   './js/words.js',
   './js/parent.js',
+  './js/art-extra.js',
+  './js/sounds-extra.js',
+  './js/backup.js',
   './js/scenes/start.js',
   './js/scenes/world.js',
-  './js/scenes/farm.js',
+  './js/scenes/kiekeboe.js',
   './js/scenes/music.js',
   './js/scenes/bubbles.js',
   './js/scenes/book.js',
@@ -28,7 +31,9 @@ const FILES = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(VERSION).then((cache) => cache.addAll(FILES)).then(() => self.skipWaiting())
+    // Met een versie in de URL komen alle bestanden vers van de server, niet uit een oude HTTP-cache.
+    // Bij het ophalen negeert de cache de querystring (ignoreSearch), dus ./js/app.js vindt ./js/app.js?v=...
+    caches.open(VERSION).then((cache) => cache.addAll(FILES.map((u) => u + '?v=' + VERSION))).then(() => self.skipWaiting())
   );
 });
 

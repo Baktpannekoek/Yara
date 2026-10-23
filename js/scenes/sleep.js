@@ -22,23 +22,29 @@ export default {
 
     const timers = [];
     const later = (fn, ms) => timers.push(setTimeout(fn, ms));
+    const theme = document.querySelector('meta[name="theme-color"]');
+    const startedAt = performance.now();
 
     ctx.audio.yawn();
-    later(() => root.classList.add('night'), 200);
+    later(() => { root.classList.add('night'); if (theme) theme.content = '#0f1230'; }, 200);
     later(() => ctx.speech.speak('Dag dag! Slaap lekker.'), 1800);
     later(() => ctx.audio.playLullaby({ onDone: () => root.classList.add('dark') }), 4500);
 
     const moon = root.querySelector('#moon');
     let restarting = false;
     ctx.onTap(moon, () => {
-      if (restarting) return;
+      // De maan telt pas als hij echt te zien is, anders slaat een tik het zachte einde over
+      if (restarting || !root.classList.contains('night') || performance.now() - startedAt < 5000) return;
       restarting = true;
       ctx.audio.stopMelody();
       ctx.audio.chime();
-      ctx.startSession();
       later(() => ctx.go('world'), 500);
     });
 
-    this.unmount = () => { timers.forEach(clearTimeout); ctx.audio.stopMelody(); };
+    this.unmount = () => {
+      timers.forEach(clearTimeout);
+      ctx.audio.stopMelody();
+      if (theme) theme.content = '#bfe3f5';
+    };
   }
 };
