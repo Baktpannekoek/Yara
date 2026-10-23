@@ -1,6 +1,6 @@
 /* Service worker: alles in de cache zodat de app offline werkt.
    Verhoog VERSION bij elke wijziging, dan haalt de app de nieuwe bestanden op. */
-const VERSION = 'yara-v3';
+const VERSION = 'yara-v4';
 const FILES = [
   './',
   './index.html',
@@ -37,6 +37,8 @@ self.addEventListener('activate', (event) => {
     caches.keys()
       .then((keys) => Promise.all(keys.filter((k) => k !== VERSION).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
+      .then(() => self.clients.matchAll({ type: 'window' }))
+      .then((clients) => clients.forEach((c) => c.postMessage({ type: 'nieuwe-versie', version: VERSION })))
   );
 });
 

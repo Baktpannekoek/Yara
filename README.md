@@ -22,12 +22,12 @@ Gebruik "Begeleide toegang" van iOS.
 
 ## Wat erin zit
 
-- **Boerderij**: kiekeboe. Tik op de deur, er komt een dier tevoorschijn met zijn geluid en zijn naam.
+- **Boerderij**: kiekeboe. Tik op de schuur, de deur gaat open en er komt een dier tevoorschijn met zijn geluid en zijn naam. Tik op het dier voor nog een keer, tik ergens anders voor het volgende dier.
 - **Muziekhoek**: zes vormen met tonen die altijd mooi samen klinken, plus een trommel en een belletje.
 - **Bellenweide**: zeepbellen die langzaam opstijgen. Een tik laat ze ploppen.
 - **Prentenboek**: één groot voorwerp per bladzijde, in vier hoofdstukken. De naam wordt uitgesproken bij elke tik.
 - **Mijn spullen**: een vijfde hoofdstuk in het prentenboek met foto's van haar eigen beer, bekertje of schoenen. Jij voegt ze toe in het oudermenu.
-- **Gezichtje**: tik op neus, ogen, mond, oren, haar en wangen.
+- **Gezichtje**: tik op neus, ogen, mond, oren, haar en wangen. Een tik naast de onderdelen geeft een ander gezichtje.
 - **Zacht einde**: na 10 minuten (instelbaar) gaat de zon onder, zwaaien de dieren en klinkt een slaapliedje. Een tik op de maan begint opnieuw.
 
 ## Jullie eigen stem
@@ -39,6 +39,15 @@ Tik op het tandwieltje rechtsboven, houd de knop drie seconden ingedrukt en los 
 Peuters herkennen hun eigen beer sneller dan een getekende. In het oudermenu maak je een foto van iets van haar, typt de naam erbij en spreekt die eventueel in. De foto komt in het prentenboek, in het hoofdstuk met de camera. Bij elke tik hoort ze de naam. Foto's worden verkleind opgeslagen op het apparaat.
 
 Opnames, foto's en instellingen blijven op het apparaat. Niets gaat naar internet.
+
+Let op: de app op het beginscherm en Safari delen hun opslag niet. Spreek de woorden dus in binnen de app op het beginscherm, dan blijven ze bewaard. Elke iPhone of iPad heeft zijn eigen opnames.
+
+## Geen geluid of traag geluid?
+
+- **Belschakelaar op stil.** iOS dempt dan de speelgeluiden, maar niet de stem. De app omzeilt dat: na de eerste tik op de zon speelt een onhoorbaar bestand, waardoor iOS alle geluid doorlaat. Hoor je toch niets, zet de schakelaar dan op luid en tik nog eens op de zon.
+- **De computerstem start traag.** Het eerste woord laat op iOS even op zich wachten. Eigen opnames klinken meteen, dus inspreken loont.
+- **Volume.** In het oudermenu staat een schuif. Het volume van het apparaat zelf telt ook mee.
+- **Nieuwe versie.** De app haalt updates vanzelf binnen. Sluit de app helemaal en open hem opnieuw als iets zich raar gedraagt.
 
 ## Waarom de app zo is gemaakt
 

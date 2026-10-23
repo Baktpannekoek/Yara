@@ -1,41 +1,89 @@
 /* Alle geluiden komen uit de Web Audio API: geen bestanden nodig, werkt offline.
-   Eén AudioContext, ontgrendeld bij de eerste tik, met een begrenzer zodat niets schrikt. */
+   Eén AudioContext, ontgrendeld bij de eerste tik, met een begrenzer zodat niets schrikt.
+
+   iPhone-valkuil: staat de belschakelaar op stil, dan dempt iOS alle Web Audio, maar niet
+   een gewoon <audio>-element. Daarom speelt er na de eerste tik een onhoorbaar stil
+   geluidsbestand in een lus. Daardoor schakelt iOS de audiosessie om naar "afspelen" en
+   klinkt Web Audio ook met de schakelaar op stil. Dit is dezelfde truc die spelletjes gebruiken. */
 
 let ctx = null;
 let master = null;
-let unlocked = false;
 let volume = 0.8;
+let media = null;        // het stille <audio>-element
+let mediaOk = false;
 
-export function isUnlocked() { return unlocked; }
+/* Een halve seconde stilte als WAV (8 kHz, 16-bit mono), gemaakt in de browser zelf */
+function silentWav() {
+  const rate = 8000, n = rate / 2;
+  const buf = new ArrayBuffer(44 + n * 2);
+  const v = new DataView(buf);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVE');
+  w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  w(36, 'data'); v.setUint32(40, n * 2, true);
+  const bytes = new Uint8Array(buf);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return 'data:audio/wav;base64,' + btoa(bin);
+}
 
-export function unlock() {
-  if (!ctx) {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    ctx = new AC();
-    const comp = ctx.createDynamicsCompressor();
-    comp.threshold.value = -18;
-    comp.knee.value = 12;
-    comp.ratio.value = 6;
-    comp.attack.value = 0.005;
-    comp.release.value = 0.2;
-    master = ctx.createGain();
-    master.gain.value = volume;
-    master.connect(comp);
-    comp.connect(ctx.destination);
+function ensureMedia() {
+  if (!media) {
+    media = document.createElement('audio');
+    media.src = silentWav();
+    media.loop = true;
+    media.preload = 'auto';
+    media.setAttribute('playsinline', '');
+    media.setAttribute('aria-hidden', 'true');
+    media.style.display = 'none';
+    media.volume = 1;   // de inhoud is stil, het volume moet aan staan om te tellen
+    document.body.appendChild(media);
   }
-  if (ctx.state !== 'running') ctx.resume();
-  // Stille buffer afspelen: dit is de klassieke iOS-ontgrendeling
-  const buf = ctx.createBuffer(1, 1, 22050);
-  const src = ctx.createBufferSource();
-  src.buffer = buf;
-  src.connect(ctx.destination);
-  src.start(0);
-  unlocked = true;
+  if (media.paused) {
+    const p = media.play();
+    if (p && p.then) p.then(() => { mediaOk = true; }).catch(() => { mediaOk = false; });
+  }
+}
+
+function ensureContext() {
+  if (ctx) return ctx;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  ctx = new AC({ latencyHint: 'interactive' });
+  const comp = ctx.createDynamicsCompressor();
+  comp.threshold.value = -12;
+  comp.knee.value = 10;
+  comp.ratio.value = 4;
+  comp.attack.value = 0.004;
+  comp.release.value = 0.15;
+  master = ctx.createGain();
+  master.gain.value = volume;
+  master.connect(comp);
+  comp.connect(ctx.destination);
+  return ctx;
+}
+
+export function isReady() { return !!ctx && ctx.state === 'running' && mediaOk; }
+
+/* Aanroepen vanuit een echte tik (touchend of click telt zeker, pointerdown meestal) */
+export function unlock() {
+  ensureContext();
+  if (ctx.state !== 'running') ctx.resume().catch(() => {});
+  // Stille buffer afspelen: de klassieke iOS-ontgrendeling van Web Audio
+  try {
+    const buf = ctx.createBuffer(1, 1, 22050);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+  } catch {}
+  ensureMedia();
   return ctx;
 }
 
 export function resume() {
-  if (ctx && ctx.state !== 'running') ctx.resume();
+  if (ctx && ctx.state !== 'running') ctx.resume().catch(() => {});
+  if (media && media.paused) ensureMedia();
 }
 
 export function setVolume(v) {
@@ -47,7 +95,7 @@ function now() { return ctx ? ctx.currentTime : 0; }
 
 /* Basis: een oscillator met zachte envelope */
 function voice({ type = 'triangle', freq = 440, dur = 0.4, gain = 0.3, attack = 0.02, release = 0.15,
-                 when = 0, glide = null, lp = null, bp = null, vib = null, am = null, dest = null }) {
+                 when = 0, glide = null, lp = null, bp = null, vib = null, am = null }) {
   if (!ctx) return;
   const t0 = now() + when;
   const osc = ctx.createOscillator();
@@ -75,14 +123,12 @@ function voice({ type = 'triangle', freq = 440, dur = 0.4, gain = 0.3, attack = 
     lfo.frequency.value = am.rate;
     const lg = ctx.createGain();
     lg.gain.value = am.depth;
-    const base = ctx.createGain();
-    base.gain.value = 1 - am.depth;
     lfo.connect(lg);
     lg.connect(g.gain);
     lfo.start(t0); lfo.stop(t0 + dur + release + 0.1);
   }
   node.connect(g);
-  g.connect(dest || master);
+  g.connect(master);
   osc.start(t0);
   osc.stop(t0 + dur + release + 0.1);
   return osc;
@@ -112,127 +158,130 @@ function noise({ dur = 0.15, gain = 0.3, attack = 0.005, when = 0, bp = null, lp
   src.stop(t0 + dur + 0.1);
 }
 
-/* ---- Algemene geluiden ---- */
+/* ---- Algemene geluiden (afgestemd op het kleine luidsprekertje van een telefoon) ---- */
 
 export const SCALE = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25]; // C D E G A C, pentatonisch
 
-export function note(freq, dur = 0.6, when = 0, gain = 0.28) {
+export function note(freq, dur = 0.6, when = 0, gain = 0.36) {
   voice({ type: 'triangle', freq, dur, gain, attack: 0.01, release: 0.35, when });
-  voice({ type: 'sine', freq: freq * 2, dur: dur * 0.6, gain: gain * 0.25, attack: 0.01, release: 0.3, when });
+  voice({ type: 'sine', freq: freq * 2, dur: dur * 0.6, gain: gain * 0.3, attack: 0.01, release: 0.3, when });
 }
 
 export function pop() {
-  voice({ type: 'sine', freq: 900, glide: { to: 300, time: 0.09 }, dur: 0.09, gain: 0.25, attack: 0.003, release: 0.08 });
-  noise({ dur: 0.06, gain: 0.08, hp: 2000 });
+  voice({ type: 'sine', freq: 1000, glide: { to: 320, time: 0.09 }, dur: 0.09, gain: 0.32, attack: 0.003, release: 0.08 });
+  noise({ dur: 0.06, gain: 0.1, hp: 2000 });
 }
 
 export function drum() {
-  voice({ type: 'sine', freq: 160, glide: { to: 55, time: 0.18 }, dur: 0.18, gain: 0.5, attack: 0.003, release: 0.15 });
-  noise({ dur: 0.08, gain: 0.12, lp: 1200 });
+  voice({ type: 'sine', freq: 180, glide: { to: 60, time: 0.18 }, dur: 0.18, gain: 0.55, attack: 0.003, release: 0.15 });
+  noise({ dur: 0.09, gain: 0.18, lp: 1500 });
 }
 
 export function bell() {
   const f = 1046.5;
-  voice({ type: 'sine', freq: f, dur: 1.2, gain: 0.22, attack: 0.003, release: 0.8 });
-  voice({ type: 'sine', freq: f * 2.76, dur: 0.7, gain: 0.08, attack: 0.003, release: 0.5 });
-  voice({ type: 'sine', freq: f * 5.4, dur: 0.3, gain: 0.03, attack: 0.003, release: 0.3 });
+  voice({ type: 'sine', freq: f, dur: 1.2, gain: 0.3, attack: 0.003, release: 0.8 });
+  voice({ type: 'sine', freq: f * 2.76, dur: 0.7, gain: 0.1, attack: 0.003, release: 0.5 });
+  voice({ type: 'sine', freq: f * 5.4, dur: 0.3, gain: 0.04, attack: 0.003, release: 0.3 });
 }
 
 export function creak() {
-  voice({ type: 'sawtooth', freq: 180, glide: { to: 260, time: 0.5 }, dur: 0.5, gain: 0.06, attack: 0.05, release: 0.15, lp: 900, vib: { rate: 14, depth: 10 } });
+  voice({ type: 'sawtooth', freq: 220, glide: { to: 320, time: 0.4 }, dur: 0.4, gain: 0.08, attack: 0.04, release: 0.12, lp: 1400, vib: { rate: 14, depth: 12 } });
 }
 
 export function thud() {
-  voice({ type: 'sine', freq: 120, glide: { to: 60, time: 0.15 }, dur: 0.15, gain: 0.3, attack: 0.003, release: 0.12 });
+  voice({ type: 'sine', freq: 160, glide: { to: 70, time: 0.14 }, dur: 0.14, gain: 0.35, attack: 0.003, release: 0.12 });
+  noise({ dur: 0.05, gain: 0.08, lp: 1200 });
 }
 
 export function chime() {
-  [0, 0.12, 0.24].forEach((w, i) => note(SCALE[[2, 3, 5][i]], 0.5, w, 0.18));
+  [0, 0.12, 0.24].forEach((w, i) => note(SCALE[[2, 3, 5][i]], 0.5, w, 0.24));
 }
 
 export function tap() {
-  voice({ type: 'sine', freq: 600, dur: 0.06, gain: 0.12, attack: 0.003, release: 0.06 });
+  voice({ type: 'sine', freq: 660, dur: 0.06, gain: 0.16, attack: 0.003, release: 0.06 });
 }
 
 export function sparkle() {
-  [0, 0.08, 0.16, 0.24].forEach((w, i) => voice({ type: 'sine', freq: 1400 + i * 300, dur: 0.12, gain: 0.08, attack: 0.003, release: 0.15, when: w }));
+  [0, 0.08, 0.16, 0.24].forEach((w, i) => voice({ type: 'sine', freq: 1400 + i * 300, dur: 0.12, gain: 0.12, attack: 0.003, release: 0.15, when: w }));
 }
 
 export function honk() {
-  voice({ type: 'square', freq: 330, dur: 0.18, gain: 0.12, attack: 0.01, release: 0.08, lp: 1200 });
-  voice({ type: 'square', freq: 392, dur: 0.22, gain: 0.12, attack: 0.01, release: 0.1, lp: 1200, when: 0.2 });
+  voice({ type: 'square', freq: 330, dur: 0.18, gain: 0.16, attack: 0.01, release: 0.08, lp: 1600 });
+  voice({ type: 'square', freq: 392, dur: 0.22, gain: 0.16, attack: 0.01, release: 0.1, lp: 1600, when: 0.2 });
 }
 
 export function boing() {
-  voice({ type: 'sine', freq: 200, glide: { to: 500, time: 0.25 }, dur: 0.25, gain: 0.2, attack: 0.005, release: 0.2, vib: { rate: 20, depth: 30 } });
+  voice({ type: 'sine', freq: 220, glide: { to: 560, time: 0.25 }, dur: 0.25, gain: 0.26, attack: 0.005, release: 0.2, vib: { rate: 20, depth: 30 } });
 }
 
 export function splash() {
-  noise({ dur: 0.35, gain: 0.18, bp: { freq: 1800, q: 0.7 } });
-  voice({ type: 'sine', freq: 500, glide: { to: 900, time: 0.3 }, dur: 0.3, gain: 0.06, attack: 0.02, release: 0.2 });
+  noise({ dur: 0.35, gain: 0.22, bp: { freq: 1800, q: 0.7 } });
+  voice({ type: 'sine', freq: 500, glide: { to: 900, time: 0.3 }, dur: 0.3, gain: 0.08, attack: 0.02, release: 0.2 });
 }
 
 export function crunch() {
-  [0, 0.12].forEach((w) => noise({ dur: 0.1, gain: 0.15, bp: { freq: 2500, q: 1 }, when: w }));
+  [0, 0.12].forEach((w) => noise({ dur: 0.1, gain: 0.2, bp: { freq: 2500, q: 1 }, when: w }));
 }
 
 export function rustle() {
-  noise({ dur: 0.4, gain: 0.08, bp: { freq: 3000, q: 0.5 } });
+  noise({ dur: 0.4, gain: 0.1, bp: { freq: 3000, q: 0.5 } });
 }
 
 export function yawn() {
-  voice({ type: 'triangle', freq: 300, glide: { to: 180, time: 0.9 }, dur: 0.9, gain: 0.1, attack: 0.2, release: 0.3, lp: 800 });
+  voice({ type: 'triangle', freq: 320, glide: { to: 200, time: 0.9 }, dur: 0.9, gain: 0.14, attack: 0.2, release: 0.3, lp: 1200 });
 }
 
-/* ---- Dierengeluiden (cartoon, gemaakt met oscillatoren) ---- */
+/* ---- Dierengeluiden (cartoon, gemaakt met oscillatoren).
+   Een telefoonluidspreker laat weinig horen onder 200 Hz, daarom zit er altijd een
+   laag erbij in het middengebied. ---- */
 
 export const animals = {
   koe() {
-    voice({ type: 'sawtooth', freq: 130, glide: { to: 95, time: 0.9 }, dur: 0.9, gain: 0.22, attack: 0.08, release: 0.3, lp: 500, vib: { rate: 5, depth: 4 } });
-    voice({ type: 'sine', freq: 65, dur: 0.9, gain: 0.15, attack: 0.1, release: 0.3 });
+    voice({ type: 'sawtooth', freq: 130, glide: { to: 95, time: 0.9 }, dur: 0.9, gain: 0.3, attack: 0.08, release: 0.3, lp: 900, vib: { rate: 5, depth: 5 } });
+    voice({ type: 'sawtooth', freq: 260, glide: { to: 190, time: 0.9 }, dur: 0.9, gain: 0.16, attack: 0.1, release: 0.3, bp: { freq: 520, q: 1.5 }, vib: { rate: 5, depth: 8 } });
   },
   hond() {
     [0, 0.22].forEach((w) => {
-      voice({ type: 'sawtooth', freq: 380, glide: { to: 220, time: 0.12 }, dur: 0.12, gain: 0.2, attack: 0.005, release: 0.08, bp: { freq: 700, q: 1.2 }, when: w });
-      noise({ dur: 0.08, gain: 0.08, bp: { freq: 900, q: 1 }, when: w });
+      voice({ type: 'sawtooth', freq: 420, glide: { to: 240, time: 0.12 }, dur: 0.12, gain: 0.3, attack: 0.005, release: 0.08, bp: { freq: 900, q: 1 }, when: w });
+      noise({ dur: 0.08, gain: 0.12, bp: { freq: 1100, q: 1 }, when: w });
     });
   },
   kat() {
-    voice({ type: 'triangle', freq: 500, glide: { to: 950, time: 0.3 }, dur: 0.3, gain: 0.14, attack: 0.03, release: 0.05, vib: { rate: 7, depth: 12 } });
-    voice({ type: 'triangle', freq: 950, glide: { to: 420, time: 0.45 }, dur: 0.45, gain: 0.14, attack: 0.01, release: 0.25, vib: { rate: 7, depth: 12 }, when: 0.3 });
+    voice({ type: 'triangle', freq: 520, glide: { to: 980, time: 0.3 }, dur: 0.3, gain: 0.22, attack: 0.03, release: 0.05, vib: { rate: 7, depth: 14 } });
+    voice({ type: 'triangle', freq: 980, glide: { to: 430, time: 0.45 }, dur: 0.45, gain: 0.22, attack: 0.01, release: 0.25, vib: { rate: 7, depth: 14 }, when: 0.3 });
   },
   eend() {
-    [0, 0.16, 0.32].forEach((w) => voice({ type: 'square', freq: 320, glide: { to: 260, time: 0.1 }, dur: 0.1, gain: 0.11, attack: 0.01, release: 0.05, lp: 1800, am: { rate: 60, depth: 0.5 }, when: w }));
+    [0, 0.16, 0.32].forEach((w) => voice({ type: 'square', freq: 330, glide: { to: 260, time: 0.1 }, dur: 0.1, gain: 0.2, attack: 0.01, release: 0.05, lp: 2600, am: { rate: 55, depth: 0.5 }, when: w }));
   },
   schaap() {
-    voice({ type: 'sawtooth', freq: 240, dur: 0.75, gain: 0.14, attack: 0.05, release: 0.2, bp: { freq: 900, q: 1.5 }, vib: { rate: 9, depth: 14 }, am: { rate: 9, depth: 0.5 } });
+    voice({ type: 'sawtooth', freq: 250, dur: 0.75, gain: 0.26, attack: 0.05, release: 0.2, bp: { freq: 1100, q: 1.2 }, vib: { rate: 9, depth: 16 }, am: { rate: 9, depth: 0.5 } });
   },
   paard() {
-    voice({ type: 'triangle', freq: 800, glide: { to: 1300, time: 0.25 }, dur: 0.25, gain: 0.1, attack: 0.02, release: 0.05, vib: { rate: 22, depth: 60 } });
-    voice({ type: 'triangle', freq: 1300, glide: { to: 500, time: 0.6 }, dur: 0.6, gain: 0.12, attack: 0.01, release: 0.25, vib: { rate: 22, depth: 60 }, when: 0.25 });
+    voice({ type: 'triangle', freq: 800, glide: { to: 1300, time: 0.25 }, dur: 0.25, gain: 0.18, attack: 0.02, release: 0.05, vib: { rate: 22, depth: 60 } });
+    voice({ type: 'triangle', freq: 1300, glide: { to: 500, time: 0.6 }, dur: 0.6, gain: 0.2, attack: 0.01, release: 0.25, vib: { rate: 22, depth: 60 }, when: 0.25 });
   },
   kip() {
-    [0, 0.18, 0.36, 0.6].forEach((w, i) => voice({ type: 'triangle', freq: i === 3 ? 820 : 560, glide: { to: i === 3 ? 500 : 480, time: 0.1 }, dur: i === 3 ? 0.25 : 0.1, gain: 0.13, attack: 0.005, release: 0.06, when: w }));
+    [0, 0.18, 0.36, 0.6].forEach((w, i) => voice({ type: 'triangle', freq: i === 3 ? 820 : 560, glide: { to: i === 3 ? 500 : 480, time: 0.1 }, dur: i === 3 ? 0.25 : 0.1, gain: 0.22, attack: 0.005, release: 0.06, when: w }));
   },
   varken() {
     [0, 0.35].forEach((w) => {
-      noise({ dur: 0.28, gain: 0.2, bp: { freq: 350, q: 2 }, when: w });
-      voice({ type: 'sawtooth', freq: 110, dur: 0.25, gain: 0.08, attack: 0.02, release: 0.1, lp: 400, am: { rate: 28, depth: 0.7 }, when: w });
+      noise({ dur: 0.28, gain: 0.36, bp: { freq: 950, q: 1.5 }, when: w });
+      voice({ type: 'sawtooth', freq: 190, dur: 0.25, gain: 0.14, attack: 0.02, release: 0.1, lp: 1500, am: { rate: 28, depth: 0.7 }, when: w });
     });
   },
   kikker() {
-    voice({ type: 'square', freq: 150, glide: { to: 120, time: 0.4 }, dur: 0.4, gain: 0.12, attack: 0.02, release: 0.1, lp: 900, am: { rate: 26, depth: 0.6 } });
-    voice({ type: 'square', freq: 170, glide: { to: 130, time: 0.3 }, dur: 0.3, gain: 0.1, attack: 0.02, release: 0.1, lp: 900, am: { rate: 26, depth: 0.6 }, when: 0.5 });
+    voice({ type: 'square', freq: 190, glide: { to: 150, time: 0.4 }, dur: 0.4, gain: 0.22, attack: 0.02, release: 0.1, lp: 2200, am: { rate: 26, depth: 0.6 } });
+    voice({ type: 'square', freq: 210, glide: { to: 160, time: 0.3 }, dur: 0.3, gain: 0.2, attack: 0.02, release: 0.1, lp: 2200, am: { rate: 26, depth: 0.6 }, when: 0.5 });
   },
   vogel() {
-    [0, 0.14, 0.3, 0.42].forEach((w, i) => voice({ type: 'sine', freq: 2200 + (i % 2) * 400, glide: { to: 3000 + (i % 2) * 300, time: 0.08 }, dur: 0.08, gain: 0.08, attack: 0.005, release: 0.05, when: w }));
+    [0, 0.14, 0.3, 0.42].forEach((w, i) => voice({ type: 'sine', freq: 2200 + (i % 2) * 400, glide: { to: 3000 + (i % 2) * 300, time: 0.08 }, dur: 0.08, gain: 0.14, attack: 0.005, release: 0.05, when: w }));
   }
 };
 
 /* ---- Opnames van ouders afspelen ---- */
 
 export async function decode(blob) {
-  if (!ctx) unlock();
+  ensureContext();
   const data = await blob.arrayBuffer();
   return new Promise((resolve, reject) => {
     // Callback-vorm: werkt ook op oudere iOS-versies
@@ -268,7 +317,7 @@ const LULLABY = [
 
 let melodyTimer = null;
 
-export function playLullaby({ beat = 0.75, gain = 0.16, onDone } = {}) {
+export function playLullaby({ beat = 0.75, gain = 0.2, onDone } = {}) {
   stopMelody();
   if (!ctx) return;
   let t = 0.3;

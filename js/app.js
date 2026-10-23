@@ -23,6 +23,7 @@ const topbar = document.getElementById('topbar');
 const hintEl = document.getElementById('hint');
 const btnHome = document.getElementById('btn-home');
 const btnParent = document.getElementById('btn-parent');
+const overlayEl = document.getElementById('overlay');
 
 let current = null;      // { id, el, scene }
 let lastTapAt = 0;
@@ -65,7 +66,7 @@ const session = {
     this.resume();
   },
   resume() {
-    if (!this.remaining) return;
+    if (!this.remaining || this.timer) return;
     this.endAt = Date.now() + this.remaining;
     this.timer = setTimeout(() => { this.timer = null; this.remaining = 0; go('sleep'); }, this.remaining);
   },
@@ -111,15 +112,39 @@ function go(id) {
   scene.mount(el, ctx);
 }
 
-/* ---------- iOS-gebaren uitzetten ---------- */
+/* ---------- Geluid ontgrendelen op elke echte tik ----------
+   pointerdown telt op iOS niet altijd als gebaar, touchend en click wel.
+   Zolang het geluid nog niet draait, proberen we het bij elke tik opnieuw. */
+
+function gestureUnlock() {
+  if (!audio.isReady()) audio.unlock();
+  else audio.resume();
+  speech.prime();
+}
+['touchend', 'click', 'keydown'].forEach((ev) => document.addEventListener(ev, gestureUnlock, { passive: true }));
+
+/* ---------- iOS-gebaren uitzetten: geen zoom, geen scroll, geen menu's ---------- */
 
 function inOverlay(e) {
-  const ov = document.getElementById('overlay');
-  return !ov.hidden && ov.contains(e.target);
+  return !overlayEl.hidden && overlayEl.contains(e.target);
 }
-document.addEventListener('touchmove', (e) => { if (!inOverlay(e)) e.preventDefault(); }, { passive: false });
+let lastTouchEnd = 0;
+document.addEventListener('touchstart', (e) => {
+  // Twee of meer vingers: knijpen voorkomen, ook in het oudermenu
+  if (e.touches.length > 1) e.preventDefault();
+}, { passive: false });
+document.addEventListener('touchmove', (e) => {
+  if (e.touches.length > 1 || !inOverlay(e)) e.preventDefault();
+}, { passive: false });
+document.addEventListener('touchend', (e) => {
+  // Dubbeltik-zoom van Safari voorkomen buiten het oudermenu
+  const t = performance.now();
+  if (t - lastTouchEnd < 350 && !inOverlay(e)) e.preventDefault();
+  lastTouchEnd = t;
+}, { passive: false });
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 document.addEventListener('gesturechange', (e) => e.preventDefault());
+document.addEventListener('gestureend', (e) => e.preventDefault());
 document.addEventListener('contextmenu', (e) => e.preventDefault());
 document.addEventListener('dblclick', (e) => e.preventDefault());
 document.addEventListener('selectstart', (e) => { if (!inOverlay(e)) e.preventDefault(); });
@@ -128,6 +153,8 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) { session.pause(); if ('speechSynthesis' in window) speechSynthesis.cancel(); }
   else { audio.resume(); session.resume(); }
 });
+window.addEventListener('pageshow', () => audio.resume());
+window.addEventListener('focus', () => audio.resume());
 
 /* ---------- Bovenbalk ---------- */
 
@@ -146,7 +173,20 @@ async function init() {
   go('start');
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-    navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('Service worker niet geregistreerd', e));
+    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
+      .then((reg) => {
+        // Bij elke terugkeer naar de app even kijken of er een nieuwe versie is
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
+      })
+      .catch((e) => console.warn('Service worker niet geregistreerd', e));
+    // Nieuwe versie klaar: meteen herladen op het startscherm, anders zodra de app naar de achtergrond gaat
+    let pendingReload = false;
+    navigator.serviceWorker.addEventListener('message', (e) => {
+      if (!e.data || e.data.type !== 'nieuwe-versie') return;
+      if (!current || current.id === 'start') location.reload();
+      else pendingReload = true;
+    });
+    document.addEventListener('visibilitychange', () => { if (document.hidden && pendingReload) location.reload(); });
   }
 }
 

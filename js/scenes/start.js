@@ -1,4 +1,4 @@
-/* Startscherm: één grote zon. De eerste tik ontgrendelt het geluid. */
+/* Startscherm: één grote zon. De eerste tik ontgrendelt het geluid en de stem. */
 
 import { GREETING_KEY } from '../words.js';
 
@@ -21,12 +21,14 @@ export default {
     ctx.onTap(sunEl, () => {
       if (started) return;
       started = true;
+      // Alles wat een gebaar nodig heeft, meteen en in deze volgorde: geluid, stem, begroeting
       ctx.audio.unlock();
+      ctx.say(GREETING_KEY, `Hoi ${ctx.childName}!`);
+      ctx.speech.prime();
       ctx.audio.chime();
       ctx.animate(sunEl, 'anim-pop');
-      setTimeout(() => ctx.say(GREETING_KEY, `Hoi ${ctx.childName}!`), 350);
       ctx.startSession();
-      setTimeout(() => ctx.go('world'), 1400);
+      setTimeout(() => ctx.go('world'), 1300);
     });
   }
 };
