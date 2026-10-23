@@ -253,17 +253,28 @@ async function toggleRecord(key, btn, status, refresh) {
   // Andere knoppen die nog op "Stop" staan terugzetten
   overlay.querySelectorAll('.btn.recording').forEach((b) => { b.classList.remove('recording'); b.textContent = 'Opnemen'; });
   audio.setRecording(true);
-  try {
-    if (!stream || !stream.active) {
-      status.textContent = 'microfoon aan…';
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    }
-  } catch (e) {
-    status.textContent = e && e.name === 'NotAllowedError' ? 'geen toestemming' : 'geen microfoon';
-    console.warn(e);
+  if (!stream || !stream.active) {
+    status.textContent = 'microfoon aan…';
     stream = null;
-    audio.setRecording(false);
-    return;
+    // Even wachten tot iOS de audiosessie heeft losgelaten, dan vragen; bij een fout één keer opnieuw
+    await new Promise((r) => setTimeout(r, 150));
+    let lastErr = null;
+    for (let poging = 0; poging < 2 && !stream; poging++) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (e) {
+        lastErr = e;
+        console.warn('getUserMedia', poging, e);
+        if (e && e.name === 'NotAllowedError') break;
+        await new Promise((r) => setTimeout(r, 500));
+      }
+    }
+    if (!stream) {
+      const naam = lastErr && lastErr.name ? lastErr.name : 'onbekend';
+      status.textContent = naam === 'NotAllowedError' ? 'geen toestemming' : `microfoon niet beschikbaar (${naam})`;
+      audio.setRecording(false);
+      return;
+    }
   }
   const mime = pickMime();
   const chunks = [];
@@ -295,10 +306,9 @@ async function toggleRecord(key, btn, status, refresh) {
     try {
       await putRecording(key, blob);
       const ok = await speech.loadOne(key);
-      status.textContent = ok ? '' : 'opgeslagen, maar niet af te spelen';
+      status.textContent = ok ? 'opgeslagen, tik op ▶' : 'opgeslagen, maar niet af te spelen';
       refresh();
       audio.setRecording(false);
-      if (ok) speech.say(key, '');
     } catch (e) {
       console.warn(e);
       status.textContent = 'opslaan mislukt';

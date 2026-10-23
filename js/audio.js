@@ -69,10 +69,17 @@ export function isReady() { return !!ctx && ctx.state === 'running' && mediaOk; 
    tik op de Stop-knop de sessie terug op afspelen en dempt iOS de microfoon. */
 let recording = false;
 export function setRecording(flag) {
-  const was = recording;
   recording = !!flag;
-  if (recording && media && !media.paused) { try { media.pause(); } catch {} }
-  if (!recording && was) resume();
+  // Tijdens het opnemen bestaat het stille element helemaal niet, net als in de eerste versie.
+  // Na het opnemen maakt de eerstvolgende tik het weer aan (play() heeft dan een gebaar).
+  if (recording) teardownMedia();
+}
+
+export function teardownMedia() {
+  if (!media) return;
+  try { media.pause(); media.removeAttribute('src'); media.load(); media.remove(); } catch {}
+  media = null;
+  mediaOk = false;
 }
 
 /* Aanroepen vanuit een echte tik (touchend of click telt zeker, pointerdown meestal) */
