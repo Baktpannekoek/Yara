@@ -69,15 +69,15 @@ export function isReady() { return !!ctx && ctx.state === 'running' && mediaOk; 
    tik op de Stop-knop de sessie terug op afspelen en dempt iOS de microfoon. */
 let recording = false;
 export function setRecording(flag) {
+  const was = recording;
   recording = !!flag;
   if (recording && media && !media.paused) { try { media.pause(); } catch {} }
+  if (!recording && was) resume();
 }
 
 /* Aanroepen vanuit een echte tik (touchend of click telt zeker, pointerdown meestal) */
 export function unlock() {
   if (recording) return ctx;
-  // iOS 17 en nieuwer: de audiosessie expliciet op afspelen, dan telt de belschakelaar niet
-  if ('audioSession' in navigator) { try { navigator.audioSession.type = 'playback'; } catch {} }
   ensureContext();
   if (ctx.state !== 'running') ctx.resume().catch(() => {});
   // Stille buffer afspelen: de klassieke iOS-ontgrendeling van Web Audio

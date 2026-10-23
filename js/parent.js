@@ -96,18 +96,16 @@ let recTimer = null;
 function isStandaloneApp() { return window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches; }
 function isIosDevice() { return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
 
-/* Microfoon loslaten. Zolang hij open staat zet iOS de audiosessie in de opnamestand en
-   klinkt alles op half volume. Op iOS 17 en nieuwer zetten we de sessie ook expliciet terug. */
+/* Microfoon loslaten. Dit gebeurt pas als het oudermenu sluit, net als in de eerste versie:
+   elke opname opnieuw om de microfoon vragen gaf op iOS lege opnames. */
 function releaseMic() {
   if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; }
-  if ('audioSession' in navigator) { try { navigator.audioSession.type = 'playback'; } catch {} }
   audio.setRecording(false);
-  audio.resume();
 }
 
 function stopStream() {
   // Loopt er nog een opname? Dan netjes stoppen, onstop bewaart hem en ruimt op.
-  if (recorder && recorder.state === 'recording') { try { recorder.stop(); } catch {} return; }
+  if (recorder && recorder.state === 'recording') { try { recorder.stop(); } catch {} }
   recorder = null;
   clearTimeout(recTimer);
   releaseMic();
@@ -247,22 +245,24 @@ function stopRecording(rec) {
   if (rec.state === 'recording') rec.stop();
 }
 
+/* Opnemen. Bewust zo eenvoudig mogelijk gehouden, zoals in de eerste versie die op iPhone werkte:
+   één microfoonstroom voor het hele menu, geen audiosessie-instellingen, de opname bewaren
+   zodra de data binnen is. Het stille geluidselement staat tijdens het opnemen stil. */
 async function toggleRecord(key, btn, status, refresh) {
   if (recorder && recorder.state === 'recording') { stopRecording(recorder); return; }
   // Andere knoppen die nog op "Stop" staan terugzetten
   overlay.querySelectorAll('.btn.recording').forEach((b) => { b.classList.remove('recording'); b.textContent = 'Opnemen'; });
-  if (stream && !stream.active) stream = null;
   audio.setRecording(true);
   try {
-    if ('audioSession' in navigator) { try { navigator.audioSession.type = 'play-and-record'; } catch {} }
-    if (!stream) {
+    if (!stream || !stream.active) {
       status.textContent = 'microfoon aan…';
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     }
   } catch (e) {
     status.textContent = e && e.name === 'NotAllowedError' ? 'geen toestemming' : 'geen microfoon';
     console.warn(e);
-    releaseMic();
+    stream = null;
+    audio.setRecording(false);
     return;
   }
   const mime = pickMime();
@@ -271,51 +271,52 @@ async function toggleRecord(key, btn, status, refresh) {
   try {
     rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
   } catch (e) {
-    try { rec = new MediaRecorder(stream); } catch (e2) { status.textContent = 'opnemen lukt niet'; releaseMic(); return; }
+    try { rec = new MediaRecorder(stream); } catch (e2) { status.textContent = 'opnemen lukt niet'; audio.setRecording(false); return; }
   }
   recorder = rec;
   // iOS levert de data soms pas na het stop-signaal; daar wachten we even op
   let gotData = null;
   const dataReady = new Promise((res) => { gotData = res; });
   rec.ondataavailable = (e) => { if (e.data && e.data.size) { chunks.push(e.data); gotData(); } };
-  // Knop, status en de grens van vier seconden pas als de microfoon echt loopt
-  rec.onstart = () => {
-    recStartedAt = performance.now();
-    btn.classList.add('recording');
-    btn.textContent = 'Stop';
-    status.textContent = 'opnemen…';
-    recTimer = setTimeout(() => { if (rec.state === 'recording') rec.stop(); }, MAX_REC_MS);
-  };
   rec.onstop = async () => {
     clearTimeout(recTimer);
     if (recorder === rec) recorder = null;
     btn.classList.remove('recording');
     btn.textContent = 'Opnemen';
     status.textContent = 'opslaan…';
-    await Promise.race([dataReady, new Promise((r) => setTimeout(r, 2000))]);
-    releaseMic();
+    await Promise.race([dataReady, new Promise((r) => setTimeout(r, 2500))]);
     const type = rec.mimeType || mime || 'audio/mp4';
     const blob = new Blob(chunks, { type });
-    if (blob.size < 200) { status.textContent = 'niets opgenomen, probeer nog eens'; return; }
+    if (blob.size < 200) {
+      status.textContent = 'niets opgenomen, probeer nog eens';
+      audio.setRecording(false);
+      return;
+    }
     try {
-      // Eerst controleren dat de opname afspeelbaar is, dan pas bewaren
-      const buffer = await audio.decode(blob);
       await putRecording(key, blob);
-      speech.setBuffer(key, buffer);
+      const ok = await speech.loadOne(key);
+      status.textContent = ok ? '' : 'opgeslagen, maar niet af te spelen';
       refresh();
-      speech.say(key, '');
+      audio.setRecording(false);
+      if (ok) speech.say(key, '');
     } catch (e) {
       console.warn(e);
-      status.textContent = 'mislukt, probeer nog eens';
+      status.textContent = 'opslaan mislukt';
+      audio.setRecording(false);
     }
   };
   try {
+    recStartedAt = performance.now();
     rec.start();
+    btn.classList.add('recording');
+    btn.textContent = 'Stop';
+    status.textContent = 'opnemen…';
+    recTimer = setTimeout(() => { if (rec.state === 'recording') rec.stop(); }, MAX_REC_MS);
   } catch (e) {
     console.warn(e);
-    status.textContent = 'mislukt';
+    status.textContent = 'opnemen lukt niet';
     if (recorder === rec) recorder = null;
-    releaseMic();
+    audio.setRecording(false);
   }
 }
 
