@@ -65,8 +65,17 @@ function ensureContext() {
 
 export function isReady() { return !!ctx && ctx.state === 'running' && mediaOk; }
 
+/* Tijdens het opnemen de audiosessie en het stille element met rust laten: anders zet een
+   tik op de Stop-knop de sessie terug op afspelen en dempt iOS de microfoon. */
+let recording = false;
+export function setRecording(flag) {
+  recording = !!flag;
+  if (recording && media && !media.paused) { try { media.pause(); } catch {} }
+}
+
 /* Aanroepen vanuit een echte tik (touchend of click telt zeker, pointerdown meestal) */
 export function unlock() {
+  if (recording) return ctx;
   // iOS 17 en nieuwer: de audiosessie expliciet op afspelen, dan telt de belschakelaar niet
   if ('audioSession' in navigator) { try { navigator.audioSession.type = 'playback'; } catch {} }
   ensureContext();
@@ -84,6 +93,7 @@ export function unlock() {
 }
 
 export function resume() {
+  if (recording) return;
   checkAlive();
   if (ctx && ctx.state !== 'running') ctx.resume().catch(() => {});
   if (media && media.paused) ensureMedia();

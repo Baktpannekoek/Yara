@@ -101,6 +101,8 @@ function isIosDevice() { return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
 function releaseMic() {
   if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; }
   if ('audioSession' in navigator) { try { navigator.audioSession.type = 'playback'; } catch {} }
+  audio.setRecording(false);
+  audio.resume();
 }
 
 function stopStream() {
@@ -250,6 +252,7 @@ async function toggleRecord(key, btn, status, refresh) {
   // Andere knoppen die nog op "Stop" staan terugzetten
   overlay.querySelectorAll('.btn.recording').forEach((b) => { b.classList.remove('recording'); b.textContent = 'Opnemen'; });
   if (stream && !stream.active) stream = null;
+  audio.setRecording(true);
   try {
     if ('audioSession' in navigator) { try { navigator.audioSession.type = 'play-and-record'; } catch {} }
     if (!stream) {
