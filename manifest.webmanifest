@@ -1,0 +1,17 @@
+{
+  "name": "Yara's wereld",
+  "short_name": "Yara",
+  "description": "Een rustige speel- en leerapp voor een peuter, om samen te gebruiken.",
+  "lang": "nl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#bfe3f5",
+  "theme_color": "#bfe3f5",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
