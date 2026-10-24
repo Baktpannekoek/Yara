@@ -569,41 +569,43 @@ svg { display: block; overflow: visible; }
 .flyer-loop.flip svg { transform: scaleX(-1); }
 @keyframes fly-across { from { transform: translateX(0); } to { transform: translateX(150vw); } }
 
-/* ---------- Speelwei ---------- */
-.scene[data-scene="speelwei"] { padding-bottom: calc(env(safe-area-inset-bottom) + 20vmin); padding-top: calc(env(safe-area-inset-top) + 76px + 16vmin); }
+/* ---------- Speelwei: een landschap met diepte ---------- */
+.scene[data-scene="speelwei"] { padding-bottom: calc(env(safe-area-inset-bottom) + 2vh); padding-top: calc(env(safe-area-inset-top) + 76px + 14vmin); justify-content: flex-end; }
 .wei-top { position: absolute; top: calc(env(safe-area-inset-top) + 74px); left: 0; right: 0; display: flex; justify-content: center; gap: 3vmin; z-index: 2; }
 .wei-top .set-btn { width: min(13vmin, 76px); height: min(13vmin, 76px); }
-.wei-field { position: absolute; left: 0; right: 0; top: calc(env(safe-area-inset-top) + 76px + 15vmin); bottom: calc(env(safe-area-inset-bottom) + 19vmin); z-index: 1; }
-.actor { position: absolute; width: var(--s); height: var(--s); transform-origin: 50% 100%; }
-.actor svg { width: 100%; height: 100%; transform: scaleX(var(--flip, 1)); }
+.wei-stage { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; width: min(96vw, 1000px); }
+.wei-row { display: flex; justify-content: center; align-items: flex-end; gap: 2vmin; width: 100%; }
+/* Achterste rij: kleiner, iets hoger op de heuvel, iets lichter: diepte */
+.wei-row.back { width: 78%; filter: saturate(.9) brightness(1.03); margin-bottom: -2vmin; }
+.wei-row.front { width: 100%; }
+.wei-figure {
+  width: calc((100% - (var(--per-row) - 1) * 2vmin) / var(--per-row));
+  max-width: 170px;
+  aspect-ratio: 100 / 140;
+  transform-origin: 50% 100%;
+}
+.wei-row.back .wei-figure { max-width: 130px; }
+.wei-figure.vehicle { aspect-ratio: 1 / 1; }
+.wei-figure svg { width: 100%; height: 100%; }
 .idle-bob { animation: bob 2.6s ease-in-out infinite; }
 .idle-sway { animation: sway 3s ease-in-out infinite; }
 .idle-breathe { animation: breathe 3.4s ease-in-out infinite; }
-.actor.anim-bounce { animation: bounce 700ms ease-out; }
-.wei-strip {
-  position: absolute;
-  bottom: calc(env(safe-area-inset-bottom) + 8px);
-  left: calc(env(safe-area-inset-left) + 8px); right: calc(env(safe-area-inset-right) + 8px);
-  display: flex; justify-content: center; gap: 1.5vmin; flex-wrap: wrap;
-  z-index: 3;
-  background: rgba(255,255,255,.55);
-  border-radius: 4vmin;
-  padding: 1.2vmin;
+.wei-figure.trick-hop { animation: trick-hop 900ms ease-out; }
+.wei-figure.trick-shake { animation: trick-shake 800ms ease-in-out; }
+.wei-figure.trick-wiggle { animation: trick-wiggle 900ms ease-in-out; }
+.wei-figure.trick-peek { animation: trick-peek 900ms ease-in-out; }
+.wei-vlinder { animation: vlinder-vlucht 18s ease-in-out infinite; }
+@keyframes vlinder-vlucht {
+  0% { transform: translate(20px, 50px); } 25% { transform: translate(80px, 30px); }
+  50% { transform: translate(150px, 45px); } 75% { transform: translate(100px, 60px); } 100% { transform: translate(20px, 50px); }
 }
-.wei-pick {
-  width: min(14vmin, 86px); height: min(14vmin, 86px);
-  border-radius: 24%;
-  background: rgba(255,255,255,.8);
-  display: grid; place-items: center;
-  transition: transform 200ms var(--ease-soft);
-}
-.wei-pick svg { width: 80%; height: 80%; }
-.wei-pick:active { transform: scale(.92); }
 @media (orientation: landscape) and (max-height: 500px) {
-  .wei-pick { width: min(11vmin, 60px); height: min(11vmin, 60px); }
   .wei-top .set-btn { width: min(11vmin, 60px); height: min(11vmin, 60px); }
+  .wei-figure { max-width: 86px; }
+  .wei-row.back .wei-figure { max-width: 64px; }
+  .wei-row { gap: 1.5vmin; }
+  .wei-row.back { margin-bottom: -1vmin; }
 }
-
 
 /* ---------- Muziek: instrument kiezen en op toetsen spelen ---------- */
 .inst-strip { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5vmin; width: min(96vw, 900px); }

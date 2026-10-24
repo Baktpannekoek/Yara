@@ -1,6 +1,6 @@
-/* Speelwei: een wei vol figuurtjes die een beetje bewegen en elk hun eigen geluid maken.
-   Bovenin wissel je van groep (boerderij, wilde dieren, voertuigen), onderin zet je figuurtjes
-   op de wei. Een tik op een figuurtje: het springt op en maakt zijn geluid, soms een gek geluidje. */
+/* Speelwei: figuurtjes met een lijf en pootjes staan netjes verdeeld op de wei. Ze bewegen alleen
+   zachtjes op hun plek. Een tik laat dat ene figuurtje springen of schudden en zijn geluid maken,
+   soms met een gek geluidje. Bovenin wissel je van groep. */
 
 import { SETS } from '../words.js';
 import { extraSounds, funSounds } from '../sounds-extra-bundel.js';
@@ -8,12 +8,84 @@ import * as extra from '../art-extra.js';
 
 const ORDER = ['farm', 'wild', 'vehicles'];
 const ICONS = { farm: (art) => art.barnIcon(), wild: () => extra.wildIcon(), vehicles: () => extra.vehicleIcon() };
-const MAX_ACTORS = 10;
 const IDLE = ['idle-bob', 'idle-sway', 'idle-breathe'];
-const FUN = ['scheetje', 'boertje', 'giechel', 'sprong', 'kus'];
+const TRICKS = ['trick-hop', 'trick-shake', 'trick-wiggle', 'trick-peek'];
+const FUN = ['scheetje', 'boertje', 'giechel'];
+
+// Lijfkleur per dier; het kopje uit de tekeningen komt erbovenop
+const BODY = {
+  koe: ['#fff', '#3b4252'], hond: ['#d9a066', '#a9733f'], kat: ['#9a9aa8', '#7c7c8a'], eend: ['#ffd66b', '#ffb84d'],
+  schaap: ['#fff7e6', '#e8dcc4'], paard: ['#c58a52', '#a9733f'], kip: ['#fff7e6', '#ffb84d'], varken: ['#f9c6d2', '#f7a8c4'],
+  kikker: ['#8fcf7c', '#6fb565'], vogel: ['#8fcbea', '#5fb0dd'], leeuw: ['#ffd66b', '#e0a86b'], olifant: ['#b8bcc8', '#9a9eaa'],
+  aap: ['#a9733f', '#8a5a3b'], giraf: ['#ffd66b', '#e0a86b'], zebra: ['#fff', '#3b4252'], krokodil: ['#8fcf7c', '#6fb565']
+};
 
 let currentSet = 'farm';
-const placed = { farm: ['koe', 'eend', 'hond'], wild: ['leeuw', 'aap'], vehicles: ['auto', 'trein'] };
+
+/* Het landschap met diepte: lucht, verre heuvels, bomen, een middenstuk per groep en gras vooraan */
+function sceneArt(setKey) {
+  const trees = (xs, scale = 1, dark = false) => xs.map((x) => `
+    <g transform="translate(${x} 0) scale(${scale})">
+      <rect x="-2" y="44" width="4" height="12" fill="#8a5a3b"/>
+      <circle cx="0" cy="40" r="9" fill="${dark ? '#7cc06c' : '#8fcf7c'}"/><circle cx="-6" cy="44" r="6" fill="${dark ? '#7cc06c' : '#8fcf7c'}"/><circle cx="6" cy="44" r="6" fill="${dark ? '#7cc06c' : '#8fcf7c'}"/>
+    </g>`).join('');
+  const bushes = (xs) => xs.map((x) => `<g transform="translate(${x} 0)"><circle cx="0" cy="66" r="6" fill="#a7d98f"/><circle cx="-5" cy="68" r="4.5" fill="#a7d98f"/><circle cx="5" cy="68" r="4.5" fill="#a7d98f"/></g>`).join('');
+  const flowers = [12, 40, 75, 118, 150, 183].map((x, i) => `<g transform="translate(${x} ${88 + (i % 2) * 6})"><circle r="2.2" fill="${['#f7a8c4', '#ffd66b', '#cdb4f0'][i % 3]}"/><circle r=".9" fill="#fff7e6"/></g>`).join('');
+  let mid = '';
+  if (setKey === 'farm') {
+    mid = `<path d="M0 62 H200" stroke="#c58a52" stroke-width="2"/><path d="M0 57 H200" stroke="#c58a52" stroke-width="2"/>
+      ${[8, 24, 40, 56, 72, 88, 104, 120, 136, 152, 168, 184].map((x) => `<rect x="${x}" y="53" width="3" height="13" rx="1.5" fill="#d9a066"/>`).join('')}
+      <g transform="translate(168 20) scale(.75)"><path d="M0 28 L18 14 L36 28 V52 H0z" fill="#f28b82"/><path d="M-3 29 L18 11 L39 29" fill="none" stroke="#3b4252" stroke-width="2"/><rect x="12" y="34" width="12" height="18" fill="#8a5a3b"/></g>`;
+  } else if (setKey === 'wild') {
+    mid = `<ellipse cx="150" cy="70" rx="34" ry="7" fill="#8fcbea"/><ellipse cx="150" cy="70" rx="26" ry="4.5" fill="#a9d8f0"/>
+      <g transform="translate(26 0)"><rect x="-1.5" y="34" width="3" height="26" fill="#8a5a3b"/><ellipse cx="0" cy="33" rx="16" ry="5" fill="#7cc06c"/></g>
+      <g transform="translate(96 0)"><rect x="-1.5" y="40" width="3" height="20" fill="#8a5a3b"/><ellipse cx="0" cy="39" rx="12" ry="4" fill="#7cc06c"/></g>
+      <ellipse cx="60" cy="68" rx="9" ry="3" fill="#b8bcc8"/>`;
+  } else {
+    mid = `<path d="M0 72 Q100 60 200 72 V84 Q100 72 0 84z" fill="#9a9eaa"/><path d="M0 78 Q100 66 200 78" stroke="#fff7e6" stroke-width="1.5" stroke-dasharray="6 5" fill="none"/>
+      <g transform="translate(176 40)"><rect x="-6" y="0" width="12" height="20" rx="2" fill="#f28b82"/><rect x="-3" y="4" width="6" height="6" fill="#e3f2fb"/></g>`;
+  }
+  return `<svg viewBox="0 0 200 100" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="wsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bfe3f5"/><stop offset="1" stop-color="#e6f5fc"/></linearGradient></defs>
+    <rect width="200" height="100" fill="url(#wsky)"/>
+    <circle cx="170" cy="18" r="11" fill="#ffd66b"/>
+    <g class="clouds" fill="#fff" opacity=".85"><ellipse cx="40" cy="20" rx="14" ry="6"/><ellipse cx="48" cy="16" rx="9" ry="6"/><ellipse cx="120" cy="14" rx="12" ry="5"/></g>
+    <ellipse cx="60" cy="70" rx="110" ry="30" fill="#c6e8b3"/><ellipse cx="170" cy="74" rx="90" ry="26" fill="#b9e2a3"/>
+    ${trees([10, 46, 80, 118, 140, 192], 1, true)}
+    <rect x="0" y="56" width="200" height="44" fill="#a7d98f"/>
+    ${mid}
+    ${bushes([4, 70, 132, 196])}
+    <ellipse cx="100" cy="104" rx="130" ry="20" fill="#8fcf7c"/>
+    ${flowers}
+    <g class="wei-vlinder"><path d="M0 0 q-6 -8 -8 -2 q0 4 4 4 q-4 2 -2 5 q3 2 6 -4z M0 0 q6 -8 8 -2 q0 4 -4 4 q4 2 2 5 q-3 2 -6 -4z" fill="#f7a8c4" stroke="#3b4252" stroke-width=".6"/></g>
+  </svg>`;
+}
+
+/* Een staand dier: lijf met vier pootjes en een staartje, het kopje erbovenop */
+function standing(ctx, key) {
+  const head = (typeof extra[key] === 'function' ? extra[key]() : null) || ctx.art.byName(key);
+  const [fill, leg] = BODY[key] || ['#cdb4f0', '#3b4252'];
+  const spots = key === 'koe' ? '<ellipse cx="38" cy="92" rx="9" ry="6" fill="#3b4252"/><ellipse cx="62" cy="100" rx="7" ry="5" fill="#3b4252"/>'
+    : key === 'zebra' ? '<path d="M34 84 q4 10 0 20 M46 82 q4 12 0 24 M58 82 q4 12 0 24 M70 84 q4 10 0 20" stroke="#3b4252" stroke-width="3" fill="none"/>'
+    : key === 'giraf' ? '<circle cx="40" cy="92" r="5" fill="#e0a86b"/><circle cx="58" cy="98" r="6" fill="#e0a86b"/><circle cx="50" cy="86" r="3" fill="#e0a86b"/>' : '';
+  const headSvg = head.replace('<svg viewBox="0 0 100 100"', '<svg x="12" y="2" width="76" height="76" viewBox="0 0 100 100"');
+  return `<svg viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="50" cy="132" rx="30" ry="5" fill="rgba(0,0,0,.08)"/>
+    <g stroke="#3b4252" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+      <rect x="30" y="104" width="11" height="26" rx="5" fill="${leg}"/><rect x="43" y="106" width="11" height="26" rx="5" fill="${leg}"/>
+      <rect x="56" y="106" width="11" height="26" rx="5" fill="${leg}"/><rect x="69" y="104" width="11" height="26" rx="5" fill="${leg}"/>
+      <path d="M80 88 q14 -4 12 8" fill="none"/>
+      <ellipse cx="54" cy="94" rx="30" ry="20" fill="${fill}"/>
+      ${spots}
+    </g>
+    ${headSvg}
+  </svg>`;
+}
+
+function figureArt(ctx, key, setKey) {
+  if (setKey === 'vehicles') return (typeof extra[key] === 'function' ? extra[key]() : null) || ctx.art.byName(key);
+  return standing(ctx, key);
+}
 
 export default {
   id: 'speelwei',
@@ -21,68 +93,25 @@ export default {
     let timers = [];
     const later = (fn, ms) => timers.push(setTimeout(fn, ms));
     const sounds = { ...ctx.audio.animals, ...extraSounds };
-    const art = (name) => (typeof extra[name] === 'function' ? extra[name]() : null) || ctx.art.byName(name);
-    let field, strip;
     let lastTap = 0;
-
-    function vmin() { return Math.min(window.innerWidth, window.innerHeight) / 100; }
-
-    function area() {
-      // De wei: tussen de bovenbalk en de strook onderin
-      const r = field.getBoundingClientRect();
-      const size = 22 * vmin();
-      return { x0: r.left + 4, x1: r.right - size - 4, y0: r.top + 4, y1: r.bottom - size - 4, size };
-    }
-
-    function wander(el) {
-      if (!el.isConnected) return;
-      const a = area();
-      const x = a.x0 + Math.random() * Math.max(1, a.x1 - a.x0);
-      const y = a.y0 + Math.random() * Math.max(1, a.y1 - a.y0);
-      const dur = 5000 + Math.random() * 6000;
-      const flip = x < parseFloat(el.style.left) ? -1 : 1;
-      el.style.setProperty('--flip', flip);
-      el.animate([{ left: el.style.left, top: el.style.top }, { left: `${x}px`, top: `${y}px` }], { duration: dur, easing: 'ease-in-out', fill: 'forwards' })
-        .onfinish = () => { el.style.left = `${x}px`; el.style.top = `${y}px`; later(() => wander(el), 1500 + Math.random() * 5000); };
-    }
-
-    function addActor(key, { announce = true } = {}) {
-      const item = SETS[currentSet].items.find((i) => i.key === key);
-      if (!item) return;
-      const existing = field.querySelector(`.actor[data-key="${key}"]`);
-      if (existing) { poke(existing, item); return; }
-      const all = field.querySelectorAll('.actor');
-      if (all.length >= MAX_ACTORS) all[0].remove();
-      const a = area();
-      const el = document.createElement('div');
-      el.className = 'actor anim-appear ' + IDLE[Math.floor(Math.random() * IDLE.length)];
-      el.dataset.key = key;
-      el.style.setProperty('--s', `${a.size}px`);
-      el.style.left = `${a.x0 + Math.random() * Math.max(1, a.x1 - a.x0)}px`;
-      el.style.top = `${a.y0 + Math.random() * Math.max(1, a.y1 - a.y0)}px`;
-      el.style.animationDelay = `${(Math.random() * 2).toFixed(2)}s`;
-      el.innerHTML = art(key);
-      field.appendChild(el);
-      ctx.onTap(el, (e) => { e.stopPropagation(); poke(el, item); });
-      later(() => wander(el), 2000 + Math.random() * 4000);
-      if (announce) { ctx.audio.pop(); later(() => ctx.say(key, item.name), 150); }
-      if (!placed[currentSet].includes(key)) placed[currentSet].push(key);
-      ctx.setHint(`Daar is de ${item.name}! Tik er maar op`);
-    }
 
     function poke(el, item) {
       const now = performance.now();
-      if (now - lastTap < 350) return;
+      if (now - lastTap < 400) return;
       lastTap = now;
-      ctx.animate(el, 'anim-bounce');
-      // Meestal het eigen geluid, soms een gek geluidje
-      if (Math.random() < 0.3) {
+      const t = TRICKS[Math.floor(Math.random() * TRICKS.length)];
+      el.classList.remove(...TRICKS);
+      void el.offsetWidth;
+      el.classList.add(t);
+      later(() => el.classList.remove(t), 1000);
+      // Meestal het eigen geluid, af en toe een gek geluidje
+      if (Math.random() < 0.25) {
         const f = FUN[Math.floor(Math.random() * FUN.length)];
         ctx.sound('fx-' + f, funSounds[f]);
-        ctx.setHint(f === 'scheetje' ? `Oei, een scheetje van de ${item.name}!` : f === 'boertje' ? `Een boertje! Zeg je pardon, ${item.name}?` : item.question);
+        ctx.setHint(f === 'scheetje' ? `Oei, een scheetje van de ${item.name}!` : f === 'boertje' ? `Een boertje! Zeg je pardon, ${item.name}?` : `De ${item.name} moet lachen!`);
       } else {
         ctx.sound('geluid-' + item.key, sounds[item.key] || ctx.audio.tap);
-        if (Math.random() < 0.5) later(() => ctx.say(item.key, item.name), 900);
+        later(() => ctx.say(item.key, item.name), 900);
         ctx.setHint(item.question);
       }
     }
@@ -90,17 +119,20 @@ export default {
     function build() {
       const set = SETS[currentSet];
       timers.forEach(clearTimeout); timers = [];
+      const n = set.items.length;
+      const backCount = Math.floor(n / 2);
+      const back = set.items.slice(0, backCount);
+      const front = set.items.slice(backCount);
+      const fig = (it, i) => `<div class="wei-figure ${IDLE[i % IDLE.length]} ${currentSet === 'vehicles' ? 'vehicle' : ''}" data-key="${it.key}" style="animation-delay:${(i * 0.37 % 2).toFixed(2)}s" aria-label="${it.name}">${figureArt(ctx, it.key, currentSet)}</div>`;
       root.innerHTML = `
-        <div class="bg">${ctx.art.landscape()}</div>
+        <div class="bg">${sceneArt(currentSet)}</div>
         <div class="wei-top">
           ${ORDER.map((k) => `<div class="set-btn ${k === currentSet ? 'active' : ''}" data-set="${k}" aria-label="${SETS[k].title}">${ICONS[k](ctx.art)}</div>`).join('')}
         </div>
-        <div class="wei-field" id="field"></div>
-        <div class="wei-strip" id="strip">
-          ${set.items.map((it) => `<div class="wei-pick" data-key="${it.key}" aria-label="${it.name}">${art(it.key)}</div>`).join('')}
+        <div class="wei-stage">
+          <div class="wei-row back" style="--per-row:${Math.max(back.length, 1)}">${back.map((it, i) => fig(it, i)).join('')}</div>
+          <div class="wei-row front" style="--per-row:${Math.max(front.length, 1)}">${front.map((it, i) => fig(it, i + backCount)).join('')}</div>
         </div>`;
-      field = root.querySelector('#field');
-      strip = root.querySelector('#strip');
       root.querySelectorAll('.set-btn').forEach((b) => ctx.onTap(b, (e) => {
         e.stopPropagation();
         if (b.dataset.set === currentSet) { ctx.animate(b, 'anim-wiggle'); return; }
@@ -108,19 +140,14 @@ export default {
         ctx.audio.tap();
         build();
       }));
-      root.querySelectorAll('.wei-pick').forEach((p) => ctx.onTap(p, (e) => {
-        e.stopPropagation();
-        ctx.animate(p, 'anim-pop');
-        addActor(p.dataset.key);
-      }));
-      // Wie er al stond komt terug
-      placed[currentSet].forEach((k) => addActor(k, { announce: false }));
-      ctx.setHint(`${set.title}: tik op een figuurtje, of zet er een bij met de strook onderin`);
+      root.querySelectorAll('.wei-figure').forEach((el) => {
+        const item = set.items.find((i) => i.key === el.dataset.key);
+        ctx.onTap(el, (e) => { e.stopPropagation(); poke(el, item); });
+      });
+      ctx.setHint(`${set.title}: tik op een figuurtje`);
     }
 
-    // Tik op lege wei: dichtstbijzijnde figuurtje reageert niet, wel een zacht tikje
     ctx.onTap(root, () => ctx.audio.tap());
-
     build();
     this.unmount = () => { timers.forEach(clearTimeout); timers = []; };
   }

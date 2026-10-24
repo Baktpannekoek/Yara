@@ -22,7 +22,7 @@ Gebruik "Begeleide toegang" van iOS.
 
 ## Wat erin zit
 
-- **Speelwei**: een wei vol figuurtjes die rondscharrelen en elk hun eigen geluid maken, soms een gek geluidje. Bovenin kies je boerderij, wilde dieren of voertuigen, onderin zet je er figuurtjes bij.
+- **Speelwei**: dieren en voertuigen staan op de wei en bewegen zachtjes. Tik op een figuurtje: het springt of schudt en maakt zijn geluid, soms een gek geluidje. Bovenin kies je boerderij, wilde dieren of voertuigen.
 - **Kiekeboe**: tik op het huisje, de deur gaat open en er komt een dier of voertuig tevoorschijn met zijn geluid en zijn naam. Tik op het dier voor nog een keer, tik ergens anders om de deur te sluiten. Met de knopjes onderin wissel je tussen boerderij, wilde dieren en garage.
 - **Muziek**: zes klankstaven die altijd mooi samen klinken en negen instrumenten met hun naam. Met het knopje onderin ga je naar de liedjes: zes bekende kinderliedjes die jullie zelf inzingen in het oudermenu. Zonder opname klinkt de melodie van Kortjakje en Vader Jacob.
 - **Doe mee**: een poppetje springt, klapt, stampt, zwaait, rent of draait, met het woord erbij. Zij doet het na.
