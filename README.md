@@ -22,6 +22,7 @@ Gebruik "Begeleide toegang" van iOS.
 
 ## Wat erin zit
 
+- **Speelwei**: een wei vol figuurtjes die rondscharrelen en elk hun eigen geluid maken, soms een gek geluidje. Bovenin kies je boerderij, wilde dieren of voertuigen, onderin zet je er figuurtjes bij.
 - **Kiekeboe**: tik op het huisje, de deur gaat open en er komt een dier of voertuig tevoorschijn met zijn geluid en zijn naam. Tik op het dier voor nog een keer, tik ergens anders om de deur te sluiten. Met de knopjes onderin wissel je tussen boerderij, wilde dieren en garage.
 - **Muziek**: zes klankstaven die altijd mooi samen klinken en negen instrumenten met hun naam. Met het knopje onderin ga je naar de liedjes: zes bekende kinderliedjes die jullie zelf inzingen in het oudermenu. Zonder opname klinkt de melodie van Kortjakje en Vader Jacob.
 - **Doe mee**: een poppetje springt, klapt, stampt, zwaait, rent of draait, met het woord erbij. Zij doet het na.
@@ -64,6 +65,10 @@ Let op: de app op het beginscherm en Safari delen hun opslag niet. Spreek de woo
 - Vragen op het scherm ("Wat zegt de koe?") zijn voor jou, om samen praten uit te lokken. Daar leert ze het meest van.
 
 Kort en samen is het advies van het Nederlands Jeugdinstituut voor kinderen onder de twee: hooguit zo'n tien minuten per keer, met een ouder erbij.
+
+## Geluiden
+
+De dieren, voertuigen en gekke geluidjes zijn echte opnames van Wikimedia Commons, ingekort voor de app. De bronnen en licenties staan in [sounds/CREDITS.md](sounds/CREDITS.md). Jullie eigen opname gaat altijd voor, en als een geluid nog niet geladen is klinkt een getekende versie.
 
 ## Zelf aanpassen
 

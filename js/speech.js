@@ -6,6 +6,7 @@
    als er vlak daarvoor cancel() is aangeroepen; daarom alleen cancel als er echt iets speelt. */
 
 import * as audio from './audio.js';
+import * as real from './realsounds.js';
 import { getRecording, listRecordingKeys } from './store.js';
 
 const buffers = new Map();   // key -> AudioBuffer
@@ -102,9 +103,12 @@ export function say(key, text) {
   return speak(text) ? 'stem' : 'stil';
 }
 
-/* Speel een geluid: opname van de ouder, anders het synthetische geluid. */
+/* Speel een geluid: opname van de ouder, anders de echte opname uit sounds/, anders synthetisch.
+   Sleutels als 'geluid-koe' of 'fx-klap' horen bij de bestanden koe.wav en klap.wav. */
 export function sound(key, fallback) {
   if (buffers.has(key)) { playRecording(key); return 'opname'; }
+  const base = String(key).replace(/^(geluid|fx)-/, '');
+  if (real.play(base)) return 'echt';
   if (fallback) fallback();
   return 'synth';
 }

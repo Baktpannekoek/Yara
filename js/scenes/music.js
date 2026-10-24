@@ -4,7 +4,7 @@
    als die bekend is, anders zegt de app de titel en nodigt de ouder uit om te zingen. */
 
 import { INSTRUMENTS, SONGS } from '../words.js';
-import { instrumentSounds } from '../sounds-more.js';
+import { instrumentSounds, playNote } from '../sounds-more.js';
 import * as more from '../art-more.js';
 
 const PADS = [
@@ -17,6 +17,13 @@ const PADS = [
 ];
 
 let mode = 'instrumenten';
+let instrument = 'piano';
+
+// Acht toetsen: C D E F G A B C, elk met een eigen kleur
+const KEYS = [
+  [261.63, '#f28b82'], [293.66, '#ffb84d'], [329.63, '#ffd66b'], [349.23, '#8fcf7c'],
+  [392.0, '#a7e6d7'], [440.0, '#8fcbea'], [493.88, '#cdb4f0'], [523.25, '#f7a8c4']
+];
 
 function songIcon(ctx, name) {
   if (name === 'bed') return ctx.art.bed();
@@ -57,8 +64,12 @@ export default {
         <div class="bg">${ctx.art.landscape()}</div>
         <div class="music-body">
           ${inst ? `
-            <div class="pad-row">${PADS.map((p, i) => `<div class="music-pad" data-i="${i}">${ctx.art.shape(p.kind, p.color)}</div>`).join('')}</div>
-            <div class="inst-grid">${INSTRUMENTS.map((it) => `<div class="inst-tile" data-key="${it.key}">${instrumentArt(ctx, it.key)}</div>`).join('')}</div>
+            <div class="inst-strip">${INSTRUMENTS.map((it) => `<div class="inst-btn ${it.key === instrument ? 'active' : ''}" data-key="${it.key}">${instrumentArt(ctx, it.key)}</div>`).join('')}</div>
+            <div class="inst-stage">
+              <div class="inst-player">${more.poppetje()}</div>
+              <div class="inst-big bob" id="inst-big">${instrumentArt(ctx, instrument)}</div>
+            </div>
+            <div class="key-row">${KEYS.map(([f, c], i) => `<div class="key" data-i="${i}" style="--c:${c}"></div>`).join('')}</div>
           ` : `
             <div class="song-grid">${SONGS.map((s) => `<div class="song-tile" data-key="${s.key}">${songIcon(ctx, s.icon)}</div>`).join('')}</div>
           `}
@@ -68,26 +79,33 @@ export default {
           <div class="mode-btn ${inst ? '' : 'active'}" data-mode="liedjes">${more.liedjeIcon()}</div>
         </div>`;
 
-      root.querySelectorAll('.music-pad[data-i]').forEach((el) => {
-        const i = Number(el.dataset.i);
+      // Toetsen: klinken in de klank van het gekozen instrument
+      root.querySelectorAll('.key').forEach((el) => {
         ctx.onTap(el, () => {
-          ctx.audio.note(ctx.audio.SCALE[i], 0.7);
-          ctx.animate(el, i % 2 ? 'anim-wiggle' : 'anim-pop');
+          playNote(instrument, KEYS[Number(el.dataset.i)][0]);
+          ctx.animate(el, 'anim-pop');
+          const big = root.querySelector('#inst-big');
+          if (big) ctx.animate(big, Number(el.dataset.i) % 2 ? 'anim-wiggle' : 'anim-bounce');
         });
       });
 
       let lastInst = 0;
-      root.querySelectorAll('.inst-tile').forEach((el) => {
-        ctx.onTap(el, () => {
+      root.querySelectorAll('.inst-btn').forEach((el) => {
+        ctx.onTap(el, (e) => {
+          e.stopPropagation();
           const now = performance.now();
-          if (now - lastInst < 600) return;
+          if (now - lastInst < 500) return;
           lastInst = now;
           const key = el.dataset.key;
-          ctx.animate(el, 'anim-bounce');
           const it = INSTRUMENTS.find((x) => x.key === key);
+          instrument = key;
+          root.querySelectorAll('.inst-btn').forEach((b) => b.classList.toggle('active', b === el));
+          const big = root.querySelector('#inst-big');
+          big.innerHTML = instrumentArt(ctx, key);
+          ctx.animate(big, 'anim-appear');
           ctx.sound('geluid-' + key, instrumentSounds[key]);
           later(() => ctx.say(key, it.name), 900);
-          ctx.setHint(`Dit is een ${it.name}. Hoor je hem?`);
+          ctx.setHint(`Dit is een ${it.name}. Speel maar op de toetsen!`);
         });
       });
 
@@ -128,7 +146,7 @@ export default {
         });
       });
 
-      ctx.setHint(inst ? 'Tik op de vormen en de instrumenten' : 'Tik op een liedje');
+      ctx.setHint(inst ? 'Kies een instrument en speel op de toetsen' : 'Tik op een liedje');
     }
 
     build();

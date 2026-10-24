@@ -41,12 +41,23 @@ export default {
       later(() => animalEl.classList.add('show'), 120);
       later(() => play(item), 220);
       later(() => { busy = false; }, 700);
+      // Zolang de deur open staat blijft het dier bewegen: springen, schudden, wiebelen
+      const tricks = ['trick-hop', 'trick-shake', 'trick-wiggle', 'trick-peek'];
+      const trick = () => {
+        if (!open) return;
+        const t = tricks[Math.floor(Math.random() * tricks.length)];
+        animalEl.classList.remove(...tricks);
+        void animalEl.offsetWidth;
+        animalEl.classList.add(t);
+        later(trick, 1600 + Math.random() * 1400);
+      };
+      later(trick, 1400);
       ctx.setHint(item.question);
     }
 
     function closeDoors(silent = false) {
       open = false; busy = true;
-      animalEl.classList.remove('show');
+      animalEl.classList.remove('show', 'trick-hop', 'trick-shake', 'trick-wiggle', 'trick-peek');
       doorL.classList.remove('open');
       doorR.classList.remove('open');
       if (!silent) ctx.audio.thud();

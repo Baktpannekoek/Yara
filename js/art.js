@@ -325,7 +325,7 @@ export function landscape(opts = {}) {
     <defs><linearGradient id="skyg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bfe3f5"/><stop offset="1" stop-color="#e6f5fc"/></linearGradient></defs>
     <rect width="200" height="100" fill="url(#skyg)"/>
     ${withSun ? '<circle cx="168" cy="22" r="12" fill="#ffd66b"/>' : ''}
-    <g fill="#fff" opacity=".85"><ellipse cx="40" cy="24" rx="14" ry="6"/><ellipse cx="48" cy="20" rx="9" ry="6"/><ellipse cx="120" cy="16" rx="12" ry="5"/><ellipse cx="128" cy="13" rx="7" ry="5"/></g>
+    <g class="clouds" fill="#fff" opacity=".85"><ellipse cx="40" cy="24" rx="14" ry="6"/><ellipse cx="48" cy="20" rx="9" ry="6"/><ellipse cx="120" cy="16" rx="12" ry="5"/><ellipse cx="128" cy="13" rx="7" ry="5"/></g>
     <ellipse cx="40" cy="104" rx="90" ry="34" fill="#b9e2a3"/>
     <ellipse cx="170" cy="108" rx="90" ry="38" fill="#a7d98f"/>
     <ellipse cx="100" cy="118" rx="140" ry="32" fill="#8fcf7c"/>

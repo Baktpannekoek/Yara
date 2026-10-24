@@ -57,6 +57,49 @@ export const instrumentSounds = {
   }
 };
 
+/* ---- Eén toon in de klank van een instrument, voor de toetsen onder het instrument ---- */
+
+export function playNote(instrument, freq) {
+  switch (instrument) {
+    case 'piano':
+      voice({ type: 'triangle', freq, dur: 0.7, gain: 0.3, attack: 0.004, release: 0.5 });
+      voice({ type: 'sine', freq: freq * 2, dur: 0.35, gain: 0.08, attack: 0.004, release: 0.3 });
+      break;
+    case 'xylofoon':
+      voice({ type: 'triangle', freq, dur: 0.3, gain: 0.32, attack: 0.004, release: 0.3 });
+      voice({ type: 'sine', freq: freq * 3, dur: 0.12, gain: 0.08, attack: 0.004, release: 0.12 });
+      break;
+    case 'gitaar':
+      voice({ type: 'triangle', freq: freq / 2, dur: 0.9, gain: 0.26, attack: 0.004, release: 0.7, lp: 2200 });
+      voice({ type: 'sawtooth', freq: freq / 2, dur: 0.25, gain: 0.06, attack: 0.004, release: 0.2, lp: 1200 });
+      break;
+    case 'trompet':
+      voice({ type: 'sawtooth', freq, dur: 0.45, gain: 0.18, attack: 0.03, release: 0.15, lp: 2400, vib: { rate: 6, depth: freq * 0.01 } });
+      break;
+    case 'fluit':
+      voice({ type: 'sine', freq: freq * 2, dur: 0.5, gain: 0.24, attack: 0.04, release: 0.15, vib: { rate: 5, depth: freq * 0.012 } });
+      noise({ dur: 0.4, gain: 0.025, bp: { freq: 3000, q: 0.5 } });
+      break;
+    case 'bel':
+      voice({ type: 'sine', freq: freq * 2, dur: 1.0, gain: 0.26, attack: 0.003, release: 0.8 });
+      voice({ type: 'sine', freq: freq * 2 * 2.76, dur: 0.5, gain: 0.07, attack: 0.003, release: 0.4 });
+      break;
+    case 'trommel':
+      voice({ type: 'sine', freq: freq / 2, glide: { to: freq / 6, time: 0.16 }, dur: 0.16, gain: 0.5, attack: 0.003, release: 0.14 });
+      noise({ dur: 0.08, gain: 0.16, lp: 1800 });
+      break;
+    case 'rammelaar':
+      [0, 0.09, 0.18].forEach((w) => noise({ dur: 0.06, gain: 0.22, bp: { freq: freq * 8, q: 2 }, when: w }));
+      break;
+    case 'tamboerijn':
+      noise({ dur: 0.16, gain: 0.2, hp: 4500 });
+      voice({ type: 'sine', freq: freq / 2, glide: { to: freq / 5, time: 0.1 }, dur: 0.1, gain: 0.22, attack: 0.003, release: 0.08 });
+      break;
+    default:
+      voice({ type: 'triangle', freq, dur: 0.6, gain: 0.3, attack: 0.01, release: 0.35 });
+  }
+}
+
 /* ---- Bewegingen ---- */
 
 export const moveSounds = {
@@ -85,6 +128,37 @@ export const moveSounds = {
     noise({ dur: 0.7, gain: 0.05, bp: { freq: 2500, q: 0.5 }, attack: 0.2 });
   }
 };
+
+/* ---- Gekke geluidjes voor de speelwei ---- */
+
+export const funSounds = {
+  scheetje() {
+    noise({ dur: 0.35, gain: 0.3, bp: { freq: 180, q: 1.5 }, attack: 0.01 });
+    voice({ type: 'sawtooth', freq: 90, glide: { to: 60, time: 0.35 }, dur: 0.35, gain: 0.18, attack: 0.01, release: 0.1, lp: 500, am: { rate: 30, depth: 0.5 } });
+  },
+  boertje() {
+    voice({ type: 'sawtooth', freq: 140, glide: { to: 80, time: 0.45 }, dur: 0.45, gain: 0.22, attack: 0.02, release: 0.1, lp: 900, am: { rate: 18, depth: 0.5 } });
+    noise({ dur: 0.3, gain: 0.1, bp: { freq: 600, q: 1 } });
+  },
+  giechel() {
+    [0, 0.12, 0.24, 0.36, 0.5].forEach((w, i) => voice({ type: 'sine', freq: 700 + i * 90, glide: { to: 900 + i * 90, time: 0.08 }, dur: 0.09, gain: 0.18, attack: 0.005, release: 0.05, when: w }));
+  },
+  sprong() {
+    voice({ type: 'sine', freq: 300, glide: { to: 700, time: 0.2 }, dur: 0.2, gain: 0.22, attack: 0.005, release: 0.15 });
+    voice({ type: 'sine', freq: 500, glide: { to: 250, time: 0.15 }, dur: 0.15, gain: 0.2, attack: 0.005, release: 0.1, when: 0.4 });
+  },
+  kus() {
+    voice({ type: 'sine', freq: 1200, glide: { to: 500, time: 0.12 }, dur: 0.12, gain: 0.18, attack: 0.03, release: 0.05 });
+    noise({ dur: 0.05, gain: 0.08, hp: 3000, when: 0.1 });
+  }
+};
+
+/* Kort vrolijk deuntje bij binnenkomst in de wereld */
+export function jingle() {
+  [[0, 0], [2, 0.14], [3, 0.28], [5, 0.42], [3, 0.62], [5, 0.8]].forEach(([i, w]) => {
+    voice({ type: 'triangle', freq: SCALE[i], dur: 0.3, gain: 0.22, attack: 0.01, release: 0.25, when: w });
+  });
+}
 
 /* ---- Opruimen ---- */
 

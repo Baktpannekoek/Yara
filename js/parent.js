@@ -136,7 +136,7 @@ export function openMenu(ctx) {
       <div class="row"><label for="volume">Volume</label><input type="range" id="volume" min="0.2" max="1" step="0.05" value="${s.volume}"></div>
 
       <h3>Plekjes</h3>
-      ${[['kiekeboe', 'Kiekeboe (boerderij, wilde dieren, voertuigen)'], ['music', 'Muziek en liedjes'], ['move', 'Doe mee'], ['bubbles', 'Bellen'], ['stickers', 'Stickers'], ['book', 'Prentenboek'], ['face', 'Gezichtje']]
+      ${[['speelwei', 'Speelwei'], ['kiekeboe', 'Kiekeboe (boerderij, wilde dieren, voertuigen)'], ['music', 'Muziek en liedjes'], ['move', 'Doe mee'], ['bubbles', 'Bellen'], ['stickers', 'Stickers'], ['book', 'Prentenboek'], ['face', 'Gezichtje']]
         .map(([k, label]) => `<div class="row"><label>${label}</label><input class="toggle" type="checkbox" data-scene="${k}" ${s.scenes[k] !== false ? 'checked' : ''}></div>`).join('')}
       <div class="row"><label for="bubble-level">Tempo bellen</label>
         <select id="bubble-level">

@@ -1,8 +1,16 @@
 /* De wereld: grote tegels naar de plekjes */
 
 import * as more from '../art-more.js';
+import { jingle } from '../sounds-more.js';
+
+/* Icoon voor de speelwei: drie koppies op een heuvel */
+function weiIcon(art) {
+  const place = (svg, x, y, s) => svg.replace('<svg viewBox="0 0 100 100"', `<svg x="${x}" y="${y}" width="${s}" height="${s}" viewBox="0 0 100 100"`);
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><ellipse cx="50" cy="92" rx="52" ry="16" fill="#b9e2a3"/>${place(art.koe(), 2, 30, 48)}${place(art.eend(), 50, 36, 44)}${place(art.kikker(), 28, 4, 40)}</svg>`;
+}
 
 const TILES = [
+  { id: 'speelwei', icon: (art) => weiIcon(art), label: 'Speelwei' },
   { id: 'kiekeboe', icon: (art) => art.barnIcon(), label: 'Kiekeboe' },
   { id: 'music', icon: (art) => art.noteIcon(), label: 'Muziek' },
   { id: 'move', icon: () => more.doeMeeIcon(), label: 'Doe mee' },
@@ -33,5 +41,7 @@ export default {
       });
     });
     ctx.setHint('Waar wil je spelen?');
+    // Kort vrolijk deuntje bij binnenkomst, niet bij elke terugkeer
+    if (!this.greeted) { this.greeted = true; setTimeout(() => jingle(), 300); }
   }
 };

@@ -41,7 +41,7 @@ export default {
       void figure.offsetWidth;
       figure.classList.add('do-' + m.anim);
       later(() => figure.classList.remove('do-' + m.anim), 1000);
-      if (moveSounds[m.fx]) moveSounds[m.fx]();
+      ctx.sound('fx-' + m.fx, moveSounds[m.fx]);
       later(() => ctx.say(m.key, m.say), 150);
       ctx.setHint(m.question);
       root.querySelectorAll('.move-btn').forEach((b) => b.classList.toggle('active', b.dataset.move === m.key));

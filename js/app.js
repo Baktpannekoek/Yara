@@ -2,6 +2,7 @@
 
 import * as audio from './audio.js';
 import * as speech from './speech.js';
+import * as realsounds from './realsounds.js';
 import * as art from './art.js';
 import { loadSettings, settings } from './store.js';
 import { openGate } from './parent.js';
@@ -9,6 +10,7 @@ import { openGate } from './parent.js';
 import start from './scenes/start.js';
 import world from './scenes/world.js';
 import kiekeboe from './scenes/kiekeboe.js';
+import speelwei from './scenes/speelwei.js';
 import music from './scenes/music.js';
 import move from './scenes/move.js';
 import bubbles from './scenes/bubbles.js';
@@ -17,7 +19,7 @@ import book from './scenes/book.js';
 import face from './scenes/face.js';
 import sleep from './scenes/sleep.js';
 
-const SCENES = { start, world, kiekeboe, music, move, bubbles, stickers, book, face, sleep };
+const SCENES = { start, world, speelwei, kiekeboe, music, move, bubbles, stickers, book, face, sleep };
 const NO_TOPBAR = new Set(['start', 'sleep']);
 
 const stage = document.getElementById('stage');
@@ -130,6 +132,7 @@ function gestureUnlock() {
   if (!audio.isReady()) audio.unlock();
   else audio.resume();
   speech.prime();
+  realsounds.load();
 }
 ['touchend', 'click', 'keydown'].forEach((ev) => document.addEventListener(ev, gestureUnlock, { passive: true }));
 
