@@ -119,6 +119,7 @@ function pickMime() {
 
 export function openMenu(ctx) {
   const s = settings();
+  audio.stopAmbient();
   const canRecord = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && 'MediaRecorder' in window);
   const groups = recordableItems(s.childName);
 
@@ -134,6 +135,7 @@ export function openMenu(ctx) {
           <option value="5">5 minuten</option><option value="10">10 minuten</option><option value="15">15 minuten</option><option value="0">Geen einde</option>
         </select></div>
       <div class="row"><label for="volume">Volume</label><input type="range" id="volume" min="0.2" max="1" step="0.05" value="${s.volume}"></div>
+      <div class="row"><label>Zachte achtergrondmuziek</label><input class="toggle" type="checkbox" id="ambient" ${s.ambient !== false ? 'checked' : ''}></div>
 
       <h3>Plekjes</h3>
       ${[['speelwei', 'Speelwei'], ['kiekeboe', 'Kiekeboe (boerderij, wilde dieren, voertuigen)'], ['music', 'Muziek en liedjes'], ['move', 'Doe mee'], ['bubbles', 'Bellen'], ['stickers', 'Stickers'], ['book', 'Prentenboek'], ['face', 'Gezichtje']]
@@ -180,6 +182,7 @@ export function openMenu(ctx) {
     </div>`;
 
   overlay.querySelector('#minutes').value = String(s.sessionMinutes);
+  overlay.querySelector('#ambient').addEventListener('change', (e) => { setSetting('ambient', e.target.checked); audio.setAmbientEnabled(e.target.checked); });
   overlay.querySelector('#bubble-level').value = s.bubbleLevel || 'gewoon';
   overlay.querySelector('#bubble-level').addEventListener('change', (e) => setSetting('bubbleLevel', e.target.value));
 

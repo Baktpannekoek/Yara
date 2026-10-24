@@ -3,11 +3,13 @@
    soms met een gek geluidje. Bovenin wissel je van groep. */
 
 import { SETS } from '../words.js';
-import { extraSounds, funSounds } from '../sounds-extra-bundel.js';
+import { extraSounds, funSounds, moveSounds } from '../sounds-extra-bundel.js';
 import * as extra from '../art-extra.js';
+import * as more from '../art-more.js';
+import { PEOPLE } from '../words.js';
 
-const ORDER = ['farm', 'wild', 'vehicles'];
-const ICONS = { farm: (art) => art.barnIcon(), wild: () => extra.wildIcon(), vehicles: () => extra.vehicleIcon() };
+const ORDER = ['farm', 'wild', 'vehicles', 'people'];
+const ICONS = { farm: (art) => art.barnIcon(), wild: () => extra.wildIcon(), vehicles: () => extra.vehicleIcon(), people: () => more.doeMeeIcon() };
 const IDLE = ['idle-bob', 'idle-sway', 'idle-breathe'];
 const TRICKS = ['trick-hop', 'trick-shake', 'trick-wiggle', 'trick-peek'];
 const FUN = ['scheetje', 'boertje', 'giechel'];
@@ -20,6 +22,7 @@ const BODY = {
   aap: ['#a9733f', '#8a5a3b'], giraf: ['#ffd66b', '#e0a86b'], zebra: ['#fff', '#3b4252'], krokodil: ['#8fcf7c', '#6fb565']
 };
 
+const POP = { trui: '#f28b82', broek: '#8fcbea', haar: '#8a5a3b', huid: '#ffd9b8' };
 let currentSet = 'farm';
 
 /* Het landschap met diepte: lucht, verre heuvels, bomen, een middenstuk per groep en gras vooraan */
@@ -41,6 +44,10 @@ function sceneArt(setKey) {
       <g transform="translate(26 0)"><rect x="-1.5" y="34" width="3" height="26" fill="#8a5a3b"/><ellipse cx="0" cy="33" rx="16" ry="5" fill="#7cc06c"/></g>
       <g transform="translate(96 0)"><rect x="-1.5" y="40" width="3" height="20" fill="#8a5a3b"/><ellipse cx="0" cy="39" rx="12" ry="4" fill="#7cc06c"/></g>
       <ellipse cx="60" cy="68" rx="9" ry="3" fill="#b8bcc8"/>`;
+  } else if (setKey === 'people') {
+    mid = `<path d="M0 76 Q60 62 120 70 T200 66 V74 Q140 76 100 78 T0 84z" fill="#e8d5b0"/>
+      <g transform="translate(150 50)"><rect x="0" y="0" width="34" height="5" rx="2" fill="#c58a52"/><rect x="0" y="9" width="34" height="5" rx="2" fill="#c58a52"/><rect x="3" y="14" width="3" height="8" fill="#8a5a3b"/><rect x="28" y="14" width="3" height="8" fill="#8a5a3b"/></g>
+      <ellipse cx="30" cy="68" rx="10" ry="3" fill="#8fcbea"/>`;
   } else {
     mid = `<path d="M0 72 Q100 60 200 72 V84 Q100 72 0 84z" fill="#9a9eaa"/><path d="M0 78 Q100 66 200 78" stroke="#fff7e6" stroke-width="1.5" stroke-dasharray="6 5" fill="none"/>
       <g transform="translate(176 40)"><rect x="-6" y="0" width="12" height="20" rx="2" fill="#f28b82"/><rect x="-3" y="4" width="6" height="6" fill="#e3f2fb"/></g>`;
@@ -61,28 +68,88 @@ function sceneArt(setKey) {
   </svg>`;
 }
 
-/* Een staand dier: lijf met vier pootjes en een staartje, het kopje erbovenop */
+/* Lijf per soort: vier poten voor de meeste dieren, een vogellijf voor eend, vogel en kip,
+   een hurkend lijf voor de kikker, een lang lijf voor de krokodil en een nek voor de giraf. */
+const KIND = { eend: 'bird', vogel: 'bird', kip: 'bird', kikker: 'frog', krokodil: 'croc', giraf: 'giraf' };
+
 function standing(ctx, key) {
   const head = (typeof extra[key] === 'function' ? extra[key]() : null) || ctx.art.byName(key);
   const [fill, leg] = BODY[key] || ['#cdb4f0', '#3b4252'];
-  const spots = key === 'koe' ? '<ellipse cx="38" cy="92" rx="9" ry="6" fill="#3b4252"/><ellipse cx="62" cy="100" rx="7" ry="5" fill="#3b4252"/>'
-    : key === 'zebra' ? '<path d="M34 84 q4 10 0 20 M46 82 q4 12 0 24 M58 82 q4 12 0 24 M70 84 q4 10 0 20" stroke="#3b4252" stroke-width="3" fill="none"/>'
-    : key === 'giraf' ? '<circle cx="40" cy="92" r="5" fill="#e0a86b"/><circle cx="58" cy="98" r="6" fill="#e0a86b"/><circle cx="50" cy="86" r="3" fill="#e0a86b"/>' : '';
-  const headSvg = head.replace('<svg viewBox="0 0 100 100"', '<svg x="12" y="2" width="76" height="76" viewBox="0 0 100 100"');
-  return `<svg viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg">
-    <ellipse cx="50" cy="132" rx="30" ry="5" fill="rgba(0,0,0,.08)"/>
-    <g stroke="#3b4252" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+  const kind = KIND[key] || 'quad';
+  const G = 'stroke="#3b4252" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"';
+  let body = '';
+  let headBox = 'x="12" y="2" width="76" height="76"';
+  if (kind === 'bird') {
+    const legColor = key === 'vogel' ? '#ffb84d' : '#ffb84d';
+    body = `<g ${G}>
+      <path d="M50 118 V130 M44 130 H56 M62 118 V130 M56 130 H68" stroke="${legColor}" stroke-width="3" fill="none"/>
+      <path d="M26 92 q-12 -10 -10 -18 q10 2 14 12z" fill="${leg}"/>
+      <ellipse cx="56" cy="100" rx="26" ry="18" fill="${fill}"/>
+      <path d="M44 96 q10 -6 22 2 q-10 10 -22 -2z" fill="${leg}" opacity=".9"/>
+    </g>`;
+    headBox = 'x="18" y="8" width="70" height="70"';
+  } else if (kind === 'frog') {
+    body = `<g ${G}>
+      <ellipse cx="50" cy="104" rx="30" ry="16" fill="${fill}"/>
+      <ellipse cx="22" cy="116" rx="12" ry="7" fill="${leg}"/><ellipse cx="78" cy="116" rx="12" ry="7" fill="${leg}"/>
+      <ellipse cx="50" cy="108" rx="16" ry="8" fill="#d6f0c6"/>
+    </g>`;
+    headBox = 'x="12" y="10" width="76" height="76"';
+  } else if (kind === 'croc') {
+    body = `<g ${G}>
+      <path d="M22 100 q-14 -2 -20 10 q10 0 20 6z" fill="${fill}"/>
+      <ellipse cx="58" cy="106" rx="36" ry="14" fill="${fill}"/>
+      <path d="M34 94 l6 -8 l6 8 M50 92 l6 -8 l6 8 M66 94 l6 -8 l6 8" fill="${leg}"/>
+      <rect x="30" y="112" width="10" height="16" rx="5" fill="${leg}"/><rect x="48" y="114" width="10" height="16" rx="5" fill="${leg}"/>
+      <rect x="66" y="114" width="10" height="16" rx="5" fill="${leg}"/><rect x="84" y="112" width="10" height="16" rx="5" fill="${leg}"/>
+    </g>`;
+    headBox = 'x="26" y="12" width="70" height="70"';
+  } else if (kind === 'giraf') {
+    body = `<g ${G}>
+      <path d="M42 66 q4 24 6 32 H62 q0 -14 2 -32z" fill="${fill}"/>
+      <circle cx="50" cy="80" r="4" fill="#e0a86b"/><circle cx="58" cy="92" r="3" fill="#e0a86b"/>
+      <rect x="28" y="110" width="10" height="24" rx="5" fill="${leg}"/><rect x="42" y="112" width="10" height="24" rx="5" fill="${leg}"/>
+      <rect x="58" y="112" width="10" height="24" rx="5" fill="${leg}"/><rect x="72" y="110" width="10" height="24" rx="5" fill="${leg}"/>
+      <path d="M84 100 q12 -4 10 8" fill="none"/>
+      <ellipse cx="55" cy="102" rx="30" ry="16" fill="${fill}"/>
+      <circle cx="42" cy="100" r="5" fill="#e0a86b"/><circle cx="62" cy="106" r="6" fill="#e0a86b"/>
+    </g>`;
+    headBox = 'x="18" y="-4" width="64" height="64"';
+  } else {
+    const spots = key === 'koe' ? '<ellipse cx="38" cy="92" rx="9" ry="6" fill="#3b4252"/><ellipse cx="62" cy="100" rx="7" ry="5" fill="#3b4252"/>'
+      : key === 'zebra' ? '<path d="M34 84 q4 10 0 20 M46 82 q4 12 0 24 M58 82 q4 12 0 24 M70 84 q4 10 0 20" stroke="#3b4252" stroke-width="3" fill="none"/>' : '';
+    body = `<g ${G}>
       <rect x="30" y="104" width="11" height="26" rx="5" fill="${leg}"/><rect x="43" y="106" width="11" height="26" rx="5" fill="${leg}"/>
       <rect x="56" y="106" width="11" height="26" rx="5" fill="${leg}"/><rect x="69" y="104" width="11" height="26" rx="5" fill="${leg}"/>
       <path d="M80 88 q14 -4 12 8" fill="none"/>
       <ellipse cx="54" cy="94" rx="30" ry="20" fill="${fill}"/>
       ${spots}
-    </g>
+    </g>`;
+  }
+  const headSvg = head.replace('<svg viewBox="0 0 100 100"', `<svg ${headBox} viewBox="0 0 100 100"`);
+  return `<svg viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="50" cy="132" rx="30" ry="5" fill="rgba(0,0,0,.08)"/>
+    ${body}
     ${headSvg}
   </svg>`;
 }
 
+/* Een mens: het poppetje met eigen haar, huid en kleding */
+function person(item) {
+  let svg = more.poppetje();
+  const L = item.look || {};
+  const swap = (from, to) => { if (to) svg = svg.split(`fill="${from}"`).join(`fill="${to}"`); };
+  // Volgorde: eerst de trui (anders raakt de huid in de war), dan broek, haar, huid
+  swap(POP.trui, L.trui); swap(POP.broek, L.broek); swap(POP.haar, L.haar); swap(POP.huid, L.huid);
+  if (item.key === 'opa') svg = svg.replace('</svg>', '<path d="M44 38 q6 3 12 0" fill="none" stroke="#d5d9e0" stroke-width="2.5" stroke-linecap="round"/><circle cx="44" cy="30" r="4.5" fill="none" stroke="#3b4252" stroke-width="1.5"/><circle cx="56" cy="30" r="4.5" fill="none" stroke="#3b4252" stroke-width="1.5"/></svg>');
+  if (item.key === 'oma') svg = svg.replace('</svg>', '<circle cx="50" cy="11" r="6" fill="#eceff3" stroke="#3b4252" stroke-width="2"/></svg>');
+  if (item.key === 'baby') svg = svg.replace('</svg>', '<circle cx="50" cy="36" r="3.5" fill="#f7a8c4" stroke="#3b4252" stroke-width="1.5"/></svg>');
+  const sc = item.scale || 1;
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><ellipse cx="50" cy="94" rx="22" ry="4" fill="rgba(0,0,0,.08)"/><g transform="translate(${(50 - 50 * sc).toFixed(1)} ${(94 - 94 * sc).toFixed(1)}) scale(${sc})">${svg.replace(/^<svg[^>]*>/, '').replace('</svg>', '')}</g></svg>`;
+}
+
 function figureArt(ctx, key, setKey) {
+  if (setKey === 'people') return person(PEOPLE.find((m) => m.key === key));
   if (setKey === 'vehicles') return (typeof extra[key] === 'function' ? extra[key]() : null) || ctx.art.byName(key);
   return standing(ctx, key);
 }
@@ -95,13 +162,34 @@ export default {
     const sounds = { ...ctx.audio.animals, ...extraSounds };
     let lastTap = 0;
 
+    const PERSON_ACTS = [
+      { anim: 'do-spring', fx: 'sprong', say: 'Hup!' },
+      { anim: 'do-klap', fx: 'klap', say: 'Klap klap!' },
+      { anim: 'do-zwaai', fx: null, say: 'Dag dag!' },
+      { anim: 'do-draai', fx: 'draai', say: 'Rondje!' },
+      { anim: 'trick-shake', fx: 'scheetje', say: 'Oeps, een scheetje!' },
+      { anim: 'trick-peek', fx: 'boertje', say: 'Boer! Pardon!' },
+      { anim: 'trick-wiggle', fx: 'giechel', say: null }
+    ];
+
     function poke(el, item) {
       const now = performance.now();
       if (now - lastTap < 400) return;
       lastTap = now;
-      const t = TRICKS[Math.floor(Math.random() * TRICKS.length)];
-      el.classList.remove(...TRICKS);
+      const allAnims = [...TRICKS, 'do-spring', 'do-klap', 'do-zwaai', 'do-draai'];
+      el.classList.remove(...allAnims);
       void el.offsetWidth;
+      if (currentSet === 'people') {
+        const act = PERSON_ACTS[Math.floor(Math.random() * PERSON_ACTS.length)];
+        el.classList.add(act.anim);
+        later(() => el.classList.remove(act.anim), 1100);
+        if (act.fx) ctx.sound('fx-' + act.fx, funSounds[act.fx] || moveSounds[act.fx]);
+        later(() => ctx.say(item.key, item.name), act.fx ? 900 : 100);
+        if (act.say) later(() => ctx.speech.speak(act.say), act.fx ? 1700 : 900);
+        ctx.setHint(`${item.name}: ${act.say || 'hihi!'}`);
+        return;
+      }
+      const t = TRICKS[Math.floor(Math.random() * TRICKS.length)];
       el.classList.add(t);
       later(() => el.classList.remove(t), 1000);
       // Meestal het eigen geluid, af en toe een gek geluidje
@@ -123,7 +211,7 @@ export default {
       const backCount = Math.floor(n / 2);
       const back = set.items.slice(0, backCount);
       const front = set.items.slice(backCount);
-      const fig = (it, i) => `<div class="wei-figure ${IDLE[i % IDLE.length]} ${currentSet === 'vehicles' ? 'vehicle' : ''}" data-key="${it.key}" style="animation-delay:${(i * 0.37 % 2).toFixed(2)}s" aria-label="${it.name}">${figureArt(ctx, it.key, currentSet)}</div>`;
+      const fig = (it, i) => `<div class="wei-figure ${IDLE[i % IDLE.length]} ${currentSet === 'vehicles' ? 'vehicle' : ''} ${currentSet === 'people' ? 'person' : ''}" data-key="${it.key}" style="animation-delay:${(i * 0.37 % 2).toFixed(2)}s" aria-label="${it.name}">${figureArt(ctx, it.key, currentSet)}</div>`;
       root.innerHTML = `
         <div class="bg">${sceneArt(currentSet)}</div>
         <div class="wei-top">

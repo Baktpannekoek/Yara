@@ -55,6 +55,7 @@ export const DEFAULTS = {
   sessionMinutes: 10,     // 0 = geen einde
   volume: 0.8,
   bubbleLevel: 'gewoon',  // rustig, gewoon of druk
+  ambient: true,          // zachte achtergrondmuziek
   scenes: { speelwei: true, kiekeboe: true, music: true, move: true, bubbles: true, stickers: true, book: true, face: true }
 };
 

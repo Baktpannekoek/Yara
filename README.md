@@ -22,7 +22,7 @@ Gebruik "Begeleide toegang" van iOS.
 
 ## Wat erin zit
 
-- **Speelwei**: dieren en voertuigen staan op de wei en bewegen zachtjes. Tik op een figuurtje: het springt of schudt en maakt zijn geluid, soms een gek geluidje. Bovenin kies je boerderij, wilde dieren of voertuigen.
+- **Speelwei**: dieren en voertuigen staan op de wei en bewegen zachtjes. Tik op een figuurtje: het springt of schudt en maakt zijn geluid, soms een gek geluidje. Bovenin kies je boerderij, wilde dieren, voertuigen of mensen (mama, papa, opa, oma, baby, kindje), die springen, klappen, zwaaien of een scheetje laten.
 - **Kiekeboe**: tik op het huisje, de deur gaat open en er komt een dier of voertuig tevoorschijn met zijn geluid en zijn naam. Tik op het dier voor nog een keer, tik ergens anders om de deur te sluiten. Met de knopjes onderin wissel je tussen boerderij, wilde dieren en garage.
 - **Muziek**: zes klankstaven die altijd mooi samen klinken en negen instrumenten met hun naam. Met het knopje onderin ga je naar de liedjes: zes bekende kinderliedjes die jullie zelf inzingen in het oudermenu. Zonder opname klinkt de melodie van Kortjakje en Vader Jacob.
 - **Doe mee**: een poppetje springt, klapt, stampt, zwaait, rent of draait, met het woord erbij. Zij doet het na.
@@ -31,6 +31,7 @@ Gebruik "Begeleide toegang" van iOS.
 - **Prentenboek**: één groot voorwerp per bladzijde, in vier hoofdstukken. De naam wordt uitgesproken bij elke tik.
 - **Mijn spullen**: een vijfde hoofdstuk in het prentenboek met foto's van haar eigen beer, bekertje of schoenen. Jij voegt ze toe in het oudermenu.
 - **Gezichtje**: tik op neus, ogen, mond, oren, haar en wangen. Een tik naast de onderdelen geeft een ander gezichtje.
+- **Achtergrondmuziek**: in elk plekje klinkt heel zacht een rustig deuntje, uit te zetten in het oudermenu.
 - **Zacht einde**: na 10 minuten (instelbaar) gaat de zon onder, zwaaien de dieren en klinkt een slaapliedje. Een tik op de maan begint opnieuw.
 
 ## Jullie eigen stem

@@ -122,6 +122,8 @@ function go(id) {
   topbar.hidden = NO_TOPBAR.has(id);
   current = { id, el, scene };
   scene.mount(el, ctx);
+  // Zachte achtergrondmuziek, afhankelijk van het plekje; stil in de muziekhoek en op het slaapscherm
+  if (id === 'start' || id === 'music' || id === 'sleep') audio.stopAmbient(); else audio.startAmbient(id);
 }
 
 /* ---------- Geluid ontgrendelen op elke echte tik ----------
@@ -163,8 +165,8 @@ document.addEventListener('dblclick', (e) => e.preventDefault());
 document.addEventListener('selectstart', (e) => { if (!inOverlay(e)) e.preventDefault(); });
 
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) { session.pause(); if ('speechSynthesis' in window) speechSynthesis.cancel(); }
-  else { audio.resume(); session.resume(); }
+  if (document.hidden) { session.pause(); audio.stopAmbient(); if ('speechSynthesis' in window) speechSynthesis.cancel(); }
+  else { audio.resume(); session.resume(); if (current && !['start', 'music', 'sleep'].includes(current.id)) audio.startAmbient(current.id); }
 });
 window.addEventListener('pageshow', () => audio.resume());
 window.addEventListener('focus', () => audio.resume());
@@ -182,6 +184,7 @@ async function init() {
   await loadSettings();
   speech.init();
   audio.setVolume(settings().volume);
+  audio.setAmbientEnabled(settings().ambient !== false);
   // Het startscherm wacht hier kort op, zodat de begroeting de opname van papa of mama pakt
   ctx.ready = speech.loadRecordings().catch((e) => console.warn(e));
   go('start');

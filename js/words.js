@@ -36,11 +36,22 @@ export const VEHICLES = [
   { key: 'fiets',         name: 'fiets',         sound: 'tring tring',      question: 'Wat doet de bel van de fiets?' }
 ];
 
+/* Mensen op de speelwei: de eerste woorden van thuis */
+export const PEOPLE = [
+  { key: 'mama',   name: 'mama',   question: 'Waar is mama?',       look: { haar: '#8a5a3b', huid: '#ffd9b8', trui: '#f7a8c4', broek: '#8fcbea' } },
+  { key: 'papa',   name: 'papa',   question: 'Waar is papa?',       look: { haar: '#5a3a26', huid: '#ffd9b8', trui: '#8fcbea', broek: '#3b4252' } },
+  { key: 'opa',    name: 'opa',    question: 'Zwaai je naar opa?',  look: { haar: '#d5d9e0', huid: '#f2c0a0', trui: '#8fcf7c', broek: '#8a5a3b' } },
+  { key: 'oma',    name: 'oma',    question: 'Zwaai je naar oma?',  look: { haar: '#eceff3', huid: '#ffe1c9', trui: '#cdb4f0', broek: '#a9733f' } },
+  { key: 'baby',   name: 'baby',   question: 'Sst, de baby slaapt bijna', look: { haar: '#f2c14e', huid: '#ffe1c9', trui: '#fff7e6', broek: '#f7a8c4' }, scale: 0.72 },
+  { key: 'kindje', name: 'kindje', question: 'Wat doet het kindje?', look: { haar: '#2e2a2a', huid: '#c68642', trui: '#ffd66b', broek: '#8fcbea' }, scale: 0.88 }
+];
+
 /* De drie kiekeboe-plekjes: gebouw, deuren en de dingen die erachter zitten */
 export const SETS = {
   farm:     { key: 'farm',     title: 'Boerderij',    items: ANIMALS,  building: 'barn',   door: 'barnDoor',   hint: 'Wie zit er in de schuur? Tik maar!' },
   wild:     { key: 'wild',     title: 'Wilde dieren', items: WILD,     building: 'jungle', door: 'leafDoor',   hint: 'Wie zit er in de struiken? Tik maar!' },
-  vehicles: { key: 'vehicles', title: 'Voertuigen',   items: VEHICLES, building: 'garage', door: 'garageDoor', hint: 'Wat staat er in de garage? Tik maar!' }
+  vehicles: { key: 'vehicles', title: 'Voertuigen',   items: VEHICLES, building: 'garage', door: 'garageDoor', hint: 'Wat staat er in de garage? Tik maar!' },
+  people:   { key: 'people',   title: 'Mensen',       items: PEOPLE,   hint: 'Tik op iemand' }
 };
 
 export const CHAPTERS = [
@@ -153,6 +164,7 @@ export function recordableItems(childName) {
   CHAPTERS.forEach((c) => c.words.forEach((w) => { if (!seen.has(w.key)) { seen.add(w.key); words.push({ key: w.key, label: w.name, text: w.name }); } }));
   groups.push({ title: 'Woorden', items: words });
   groups.push({ title: 'Gezichtje', items: FACE_PARTS.map((p) => ({ key: p.key, label: p.name, text: p.name })) });
+  groups.push({ title: 'Mensen', items: PEOPLE.map((m) => ({ key: m.key, label: m.name, text: m.name })) });
   groups.push({ title: 'Instrumenten', items: INSTRUMENTS.map((i) => ({ key: i.key, label: i.name, text: i.name })) });
   groups.push({ title: 'Doe mee', items: MOVES.map((m) => ({ key: m.key, label: m.say, text: m.say })) });
   groups.push({ title: 'Stickers', items: STICKERS.filter((s) => !seen.has(s.key)).map((s) => ({ key: s.key, label: s.name, text: s.name })) });

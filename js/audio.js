@@ -119,8 +119,11 @@ function checkAlive() {
   if (frozen) {
     console.warn('Audio stond stil, context opnieuw opgebouwd');
     try { ctx.close(); } catch {}
+    const was = ambient.name;
+    ambient.timer && clearTimeout(ambient.timer); ambient.timer = null; ambient.bus = null; ambient.name = null;
     ctx = null; master = null; melodyBus = null;
     ensureContext();
+    if (was) setTimeout(() => startAmbient(was), 300);
     if (ctx.state !== 'running') ctx.resume().catch(() => {});
     lastClock = -1;
     lastStamp = nowMs;
@@ -409,6 +412,63 @@ export function isMelodyPlaying() { return !!melodyTimer; }
 
 export function playLullaby({ beat = 0.75, gain = 0.2, onDone } = {}) {
   return playMelody('kortjakje', { beat, gain, soft: true, onDone });
+}
+
+/* ---- Zachte achtergrondmuziek per plekje: een korte, rustige loop ---- */
+
+const AMBIENT = {
+  world:    { beat: 0.5, gain: 0.05, notes: [[0, 1], [2, 1], [4, 1], [2, 1], [1, 1], [3, 1], [5, 1], [3, 1]] },
+  speelwei: { beat: 0.45, gain: 0.05, notes: [[0, 1], [4, 1], [2, 1], [4, 1], [1, 1], [5, 1], [3, 1], [5, 1]] },
+  kiekeboe: { beat: 0.6, gain: 0.045, notes: [[0, 1], [2, 0.5], [3, 0.5], [4, 2], [3, 1], [2, 0.5], [1, 0.5], [0, 2]] },
+  move:     { beat: 0.35, gain: 0.05, notes: [[0, 1], [0, 1], [3, 1], [3, 1], [4, 1], [4, 1], [3, 2]] },
+  bubbles:  { beat: 0.7, gain: 0.04, notes: [[5, 2], [3, 2], [4, 2], [2, 2]] },
+  stickers: { beat: 0.5, gain: 0.045, notes: [[2, 1], [4, 1], [5, 1], [4, 1], [2, 1], [1, 1], [0, 2]] },
+  book:     { beat: 0.65, gain: 0.04, notes: [[0, 2], [2, 1], [3, 1], [4, 2], [2, 2]] },
+  face:     { beat: 0.55, gain: 0.04, notes: [[4, 1], [2, 1], [0, 2], [3, 1], [1, 1], [0, 2]] }
+};
+let ambient = { name: null, timer: null, bus: null, on: true };
+
+export function setAmbientEnabled(flag) {
+  ambient.on = !!flag;
+  if (!ambient.on) stopAmbient();
+}
+
+export function startAmbient(name) {
+  if (ambient.name === name) return;
+  stopAmbient();
+  const pat = AMBIENT[name];
+  if (!pat || !ctx || !ambient.on) return;
+  ambient.name = name;
+  const bus = ctx.createGain();
+  bus.gain.value = 0;
+  bus.connect(master);
+  bus.gain.setTargetAtTime(1, ctx.currentTime, 1.2);   // zacht infaden
+  ambient.bus = bus;
+  const total = pat.notes.reduce((t, [, l]) => t + l, 0) * pat.beat;
+  let next = ctx.currentTime + 0.2;
+  const schedule = () => {
+    // Steeds één rondje vooruit plannen
+    let t = next;
+    pat.notes.forEach(([i, l]) => {
+      const dur = l * pat.beat;
+      voice({ type: 'sine', freq: SCALE[i] * 2, dur: dur * 0.9, gain: pat.gain, attack: 0.05, release: 0.3, when: t - ctx.currentTime, dest: bus });
+      voice({ type: 'triangle', freq: SCALE[i], dur: dur * 0.9, gain: pat.gain * 0.5, attack: 0.08, release: 0.3, when: t - ctx.currentTime, lp: 900, dest: bus });
+      t += dur;
+    });
+    next = t;
+    ambient.timer = setTimeout(schedule, Math.max(200, (next - ctx.currentTime - 0.5) * 1000));
+  };
+  schedule();
+}
+
+export function stopAmbient() {
+  if (ambient.timer) { clearTimeout(ambient.timer); ambient.timer = null; }
+  if (ambient.bus && ctx) {
+    const bus = ambient.bus;
+    try { bus.gain.setTargetAtTime(0, ctx.currentTime, 0.4); setTimeout(() => { try { bus.disconnect(); } catch {} }, 2500); } catch {}
+  }
+  ambient.bus = null;
+  ambient.name = null;
 }
 
 export function stopMelody() {
