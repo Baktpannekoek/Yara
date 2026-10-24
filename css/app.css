@@ -321,7 +321,7 @@ svg { display: block; overflow: visible; }
 }
 
 /* Gezichtje */
-.face-wrap { width: min(86vmin, 92vw, 640px, 76vh); aspect-ratio: 1 / 1; }
+.face-wrap { width: min(96vmin, 96vw, 760px, 82vh); aspect-ratio: 1 / 1; }
 .face-wrap svg { width: 100%; height: 100%; }
 .face-wrap svg, .face-wrap svg * { pointer-events: auto; }
 .face-part { cursor: pointer; transform-box: fill-box; transform-origin: center; }
@@ -435,9 +435,9 @@ svg { display: block; overflow: visible; }
 
 /* ---------- Kiekeboe: wisselknopjes onderin ---------- */
 .scene[data-scene="kiekeboe"], .scene[data-scene="music"], .scene[data-scene="move"], .scene[data-scene="stickers"] {
-  padding-bottom: calc(env(safe-area-inset-bottom) + 17vmin);
+  padding-bottom: calc(env(safe-area-inset-bottom) + 20vmin);
 }
-.scene[data-scene="kiekeboe"] .farm-wrap { width: min(90vmin, 92vw, 700px, 62vh); }
+.scene[data-scene="kiekeboe"] .farm-wrap { width: min(90vmin, 92vw, 700px, 60vh); }
 .set-switch, .mode-switch {
   position: absolute;
   bottom: calc(env(safe-area-inset-bottom) + 10px);
@@ -446,7 +446,7 @@ svg { display: block; overflow: visible; }
   z-index: 2;
 }
 .set-btn, .mode-btn {
-  width: min(14vmin, 84px); height: min(14vmin, 84px);
+  width: min(17vmin, 100px); height: min(17vmin, 100px);
   border-radius: 50%;
   background: rgba(255,255,255,.7);
   display: grid; place-items: center;
@@ -486,7 +486,7 @@ svg { display: block; overflow: visible; }
 .move-figure [data-part="hoofd"], .move-figure [data-part="romp"] { transform-origin: 50% 50%; }
 .move-buttons { position: relative; z-index: 1; display: flex; flex-wrap: wrap; justify-content: center; gap: 2.5vmin; margin-top: 2vmin; width: min(94vw, 700px); }
 .move-btn {
-  width: min(15vmin, 96px); height: min(15vmin, 96px);
+  width: min(18vmin, 110px); height: min(18vmin, 110px);
   border-radius: 50%;
   background: rgba(255,255,255,.8);
   box-shadow: 0 4px 12px rgba(0,0,0,.08);
@@ -543,7 +543,7 @@ svg { display: block; overflow: visible; }
   padding: 1.2vmin;
 }
 .sticker-pick {
-  width: min(13vmin, 78px); height: min(13vmin, 78px);
+  width: min(15vmin, 90px); height: min(15vmin, 90px);
   border-radius: 50%;
   background: rgba(255,255,255,.75);
   display: grid; place-items: center;

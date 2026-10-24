@@ -1,6 +1,6 @@
 /* Service worker: alles in de cache zodat de app offline werkt.
    Verhoog VERSION bij elke wijziging, dan haalt de app de nieuwe bestanden op. */
-const VERSION = 'yara-v11';
+const VERSION = 'yara-v12';
 const FILES = [
   './',
   './index.html',

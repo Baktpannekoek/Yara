@@ -102,7 +102,7 @@ export default {
         if (inside(wrap, e, 0.05)) reveal();
         return;
       }
-      if (inside(animalEl, e, 0.2)) {
+      if (inside(animalEl, e, 0.4)) {
         ctx.animate(animalEl, 'anim-bounce');
         play(current(), 800);
       } else {

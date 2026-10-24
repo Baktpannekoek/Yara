@@ -8,12 +8,12 @@ const ANIM = { oog: 'blink', neus: 'anim-wiggle', mond: 'anim-pop', oor: 'anim-w
 
 // Tikzones: onderdeel, middelpunt x, y en straal in de 100x100-tekening. Latere zones liggen bovenop.
 const HITS = [
-  ['haar', 50, 22, 24],
-  ['oor', 14, 56, 14], ['oor', 86, 56, 14],
-  ['wang', 29, 67, 9], ['wang', 71, 67, 9],
-  ['mond', 50, 79, 13],
-  ['neus', 50, 65, 8],
-  ['oog', 38, 54, 11], ['oog', 62, 54, 11]
+  ['haar', 50, 20, 30],
+  ['oor', 12, 56, 18], ['oor', 88, 56, 18],
+  ['wang', 27, 69, 12], ['wang', 73, 69, 12],
+  ['mond', 50, 81, 16],
+  ['oog', 37, 53, 14], ['oog', 63, 53, 14],
+  ['neus', 50, 65, 12]
 ];
 
 const VARIANTS = [
@@ -87,5 +87,17 @@ export default {
     });
 
     ctx.setHint('Waar is de neus?');
+
+    // Af en toe wenkt een onderdeel even, zodat ze ziet waar ze kan tikken
+    let wink = null;
+    const parts = ['neus', 'oog', 'mond', 'oor', 'wang', 'haar'];
+    let wi = 0;
+    const wenk = () => {
+      const key = parts[wi++ % parts.length];
+      wrap.querySelectorAll(`[data-part="${key}"]:not(circle)`).forEach((el) => ctx.animate(el, 'anim-pop'));
+      wink = setTimeout(wenk, 4000 + Math.random() * 3000);
+    };
+    wink = setTimeout(wenk, 3500);
+    this.unmount = () => clearTimeout(wink);
   }
 };
