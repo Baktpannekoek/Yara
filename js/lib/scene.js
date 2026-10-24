@@ -4,6 +4,21 @@
 
 import * as fx from './fx.js';
 
+/* Een eenvoudig podium voor scenes zonder wereld (kiekeboe, doe mee): alleen een effectenlaag
+   en een manier om het middelpunt van een figuur te vinden. */
+export function simpleStage(root) {
+  let layer = root.querySelector('.world-fx');
+  if (!layer) { layer = document.createElement('div'); layer.className = 'world-fx'; root.appendChild(layer); }
+  fx.setLayer(layer);
+  return {
+    center(fig, fx0 = 0.5, fy0 = 0.5) {
+      const r = fig.el.getBoundingClientRect();
+      return { x: r.left + r.width * fx0, y: r.top + r.height * fy0 };
+    },
+    destroy() { layer.remove(); }
+  };
+}
+
 export function mountWorld(root, world, ctx) {
   const portrait = window.innerHeight > window.innerWidth;
   const dims = portrait ? world.portrait : world.landscape;   // { w, h, layers(), spots }

@@ -123,7 +123,7 @@ function go(id) {
   current = { id, el, scene };
   scene.mount(el, ctx);
   // Zachte achtergrondmuziek, afhankelijk van het plekje; stil in de muziekhoek en op het slaapscherm
-  if (id === 'start' || id === 'music' || id === 'sleep') audio.stopAmbient(); else audio.startAmbient(id);
+  if (id === 'start' || id === 'music' || id === 'sleep') audio.stopAmbient(); else audio.startAmbient(scene.ambient || id);
 }
 
 /* ---------- Geluid ontgrendelen op elke echte tik ----------
@@ -166,7 +166,7 @@ document.addEventListener('selectstart', (e) => { if (!inOverlay(e)) e.preventDe
 
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) { session.pause(); audio.stopAmbient(); if ('speechSynthesis' in window) speechSynthesis.cancel(); }
-  else { audio.resume(); session.resume(); if (current && !['start', 'music', 'sleep'].includes(current.id)) audio.startAmbient(current.id); }
+  else { audio.resume(); session.resume(); if (current && !['start', 'music', 'sleep'].includes(current.id)) audio.startAmbient(current.scene.ambient || current.id); }
 });
 window.addEventListener('pageshow', () => audio.resume());
 window.addEventListener('focus', () => audio.resume());

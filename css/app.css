@@ -676,3 +676,13 @@ svg { display: block; overflow: visible; }
 @keyframes flower-nod { 0%,100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
 .world .clouds { animation: clouds-drift 70s linear infinite; }
 .world .sun-glow { animation: breathe 4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+
+
+/* ---------- Bibliotheekfiguren in kiekeboe en doe mee ---------- */
+.farm-animal .fig.in-barn { width: 100%; height: 100%; }
+.farm-animal .fig.in-barn svg { width: 100%; height: 100%; }
+.move-figure .fig { width: 100%; height: 100%; }
+.move-figure .fig svg { width: 100%; height: 100%; }
+
+.inst-player .fig { width: 100%; height: 100%; }
+.inst-player .fig svg { width: 100%; height: 100%; }

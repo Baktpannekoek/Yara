@@ -21,7 +21,7 @@ export const eend = {
         <path d="M26 88 a32 20 0 0 0 64 0z" fill="${GEELS}"/><ellipse cx="58" cy="88" rx="32" ry="20" fill="none" ${L}/>`)}
       ${part('vleugel', 46, 82, `<path d="M44 82 q22 -10 36 4 q-14 12 -34 6z" fill="${GEELS}" ${L}/><path d="M56 86 q10 -2 16 2" fill="none" ${L2}/>`)}
       ${part('kop', 82, 70, `
-        <path d="M74 72 q0 -16 6 -24" fill="none" stroke="${GEEL}" stroke-width="12" stroke-linecap="round"/><path d="M74 72 q0 -16 6 -24" fill="none" ${L} stroke-width="3"/>
+        <path d="M74 72 q0 -16 6 -24" fill="none" stroke="${GEEL}" stroke-width="12" stroke-linecap="round"/><path d="M74 72 q0 -16 6 -24" fill="none" ${L}/>
         <circle cx="86" cy="44" r="17" fill="${GEEL}" ${L}/>
         <path d="M69 44 a17 17 0 0 0 34 0z" fill="${GEELS}" opacity=".5"/><circle cx="86" cy="44" r="17" fill="none" ${L}/>
         <path d="M80 26 q4 -8 8 -2 q4 -6 6 2" fill="${GEEL}" ${L2}/>

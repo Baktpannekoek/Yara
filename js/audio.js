@@ -120,7 +120,7 @@ function checkAlive() {
     console.warn('Audio stond stil, context opnieuw opgebouwd');
     try { ctx.close(); } catch {}
     const was = ambient.name;
-    ambient.timer && clearTimeout(ambient.timer); ambient.timer = null; ambient.bus = null; ambient.name = null;
+    ambient.token++; ambient.bus = null; ambient.src = null; ambient.name = null;
     ctx = null; master = null; melodyBus = null;
     ensureContext();
     if (was) setTimeout(() => startAmbient(was), 300);
@@ -414,19 +414,34 @@ export function playLullaby({ beat = 0.75, gain = 0.2, onDone } = {}) {
   return playMelody('kortjakje', { beat, gain, soft: true, onDone });
 }
 
-/* ---- Zachte achtergrondmuziek per plekje: een korte, rustige loop ---- */
+/* ---- Achtergrondmuziek: echte deuntjes met meerdere instrumenten, zacht onder de stemmen ----
+   De bestanden in music/ zijn ingekorte mono-loops van Kevin MacLeod (CC BY 4.0, zie music/CREDITS.md).
+   Elk plekje heeft zijn eigen deuntje. De speelwei wisselt mee met de gekozen wereld. */
 
-const AMBIENT = {
-  world:    { beat: 0.5, gain: 0.05, notes: [[0, 1], [2, 1], [4, 1], [2, 1], [1, 1], [3, 1], [5, 1], [3, 1]] },
-  speelwei: { beat: 0.45, gain: 0.05, notes: [[0, 1], [4, 1], [2, 1], [4, 1], [1, 1], [5, 1], [3, 1], [5, 1]] },
-  kiekeboe: { beat: 0.6, gain: 0.045, notes: [[0, 1], [2, 0.5], [3, 0.5], [4, 2], [3, 1], [2, 0.5], [1, 0.5], [0, 2]] },
-  move:     { beat: 0.35, gain: 0.05, notes: [[0, 1], [0, 1], [3, 1], [3, 1], [4, 1], [4, 1], [3, 2]] },
-  bubbles:  { beat: 0.7, gain: 0.04, notes: [[5, 2], [3, 2], [4, 2], [2, 2]] },
-  stickers: { beat: 0.5, gain: 0.045, notes: [[2, 1], [4, 1], [5, 1], [4, 1], [2, 1], [1, 1], [0, 2]] },
-  book:     { beat: 0.65, gain: 0.04, notes: [[0, 2], [2, 1], [3, 1], [4, 2], [2, 2]] },
-  face:     { beat: 0.55, gain: 0.04, notes: [[4, 1], [2, 1], [0, 2], [3, 1], [1, 1], [0, 2]] }
+const TRACKS = {
+  farm: 'fluffing-a-duck', wild: 'monkeys-spinning-monkeys', vehicles: 'wallpaper', people: 'carefree',
+  world: 'carefree', speelwei: 'fluffing-a-duck', kiekeboe: 'sneaky-snitch', move: 'bumbly-march',
+  bubbles: 'pamgaea', stickers: 'happy-boy-end-theme', book: 'carefree', face: 'happy-boy-end-theme'
 };
-let ambient = { name: null, timer: null, bus: null, on: true };
+const MUSIC_GAIN = 0.16;
+const musicBuffers = new Map();   // bestand -> AudioBuffer, hooguit drie tegelijk in het geheugen
+let ambient = { name: null, bus: null, src: null, on: true, timer: null, token: 0 };
+
+async function loadTrack(file) {
+  if (musicBuffers.has(file)) return musicBuffers.get(file);
+  const res = await fetch('music/' + file + '.mp3');
+  if (!res.ok) throw new Error('muziek niet gevonden: ' + file);
+  const data = await res.arrayBuffer();
+  const buf = await new Promise((ok, fail) => {
+    try {
+      const p = ctx.decodeAudioData(data, ok, fail);
+      if (p && p.then) p.then(ok, fail);
+    } catch (e) { fail(e); }
+  });
+  if (musicBuffers.size >= 3) musicBuffers.delete(musicBuffers.keys().next().value);
+  musicBuffers.set(file, buf);
+  return buf;
+}
 
 export function setAmbientEnabled(flag) {
   ambient.on = !!flag;
@@ -434,41 +449,54 @@ export function setAmbientEnabled(flag) {
 }
 
 export function startAmbient(name) {
+  const file = TRACKS[name];
+  if (!file) { stopAmbient(); return; }
+  if (!ctx || !ambient.on) return;
   if (ambient.name === name) return;
   stopAmbient();
-  const pat = AMBIENT[name];
-  if (!pat || !ctx || !ambient.on) return;
   ambient.name = name;
-  const bus = ctx.createGain();
-  bus.gain.value = 0;
-  bus.connect(master);
-  bus.gain.setTargetAtTime(1, ctx.currentTime, 1.2);   // zacht infaden
-  ambient.bus = bus;
-  const total = pat.notes.reduce((t, [, l]) => t + l, 0) * pat.beat;
-  let next = ctx.currentTime + 0.2;
-  const schedule = () => {
-    // Steeds één rondje vooruit plannen
-    let t = next;
-    pat.notes.forEach(([i, l]) => {
-      const dur = l * pat.beat;
-      voice({ type: 'sine', freq: SCALE[i] * 2, dur: dur * 0.9, gain: pat.gain, attack: 0.05, release: 0.3, when: t - ctx.currentTime, dest: bus });
-      voice({ type: 'triangle', freq: SCALE[i], dur: dur * 0.9, gain: pat.gain * 0.5, attack: 0.08, release: 0.3, when: t - ctx.currentTime, lp: 900, dest: bus });
-      t += dur;
-    });
-    next = t;
-    ambient.timer = setTimeout(schedule, Math.max(200, (next - ctx.currentTime - 0.5) * 1000));
-  };
-  schedule();
+  const token = ++ambient.token;
+  loadTrack(file).then((buf) => {
+    if (token !== ambient.token || !ctx) return;
+    const bus = ctx.createGain();
+    bus.gain.value = 0;
+    bus.connect(master);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    src.connect(bus);
+    src.start(0);
+    ambient.bus = bus;
+    ambient.src = src;
+    bus.gain.setTargetAtTime(MUSIC_GAIN, ctx.currentTime, 0.8);   // zacht infaden
+  }).catch((e) => {
+    console.warn(e);
+    if (token === ambient.token) ambient.name = null;
+  });
 }
 
 export function stopAmbient() {
-  if (ambient.timer) { clearTimeout(ambient.timer); ambient.timer = null; }
+  ambient.token++;
   if (ambient.bus && ctx) {
-    const bus = ambient.bus;
-    try { bus.gain.setTargetAtTime(0, ctx.currentTime, 0.4); setTimeout(() => { try { bus.disconnect(); } catch {} }, 2500); } catch {}
+    const bus = ambient.bus, src = ambient.src;
+    try { bus.gain.setTargetAtTime(0, ctx.currentTime, 0.3); } catch {}
+    setTimeout(() => { try { src.stop(); } catch {} try { bus.disconnect(); } catch {} }, 1600);
   }
   ambient.bus = null;
+  ambient.src = null;
   ambient.name = null;
+}
+
+/* Even zachter zodra een stem of geluid klinkt, daarna rustig weer omhoog */
+let duckTimer = null;
+export function duckAmbient(ms = 1600) {
+  if (!ambient.bus || !ctx) return;
+  const bus = ambient.bus;
+  try { bus.gain.setTargetAtTime(MUSIC_GAIN * 0.3, ctx.currentTime, 0.08); } catch {}
+  if (duckTimer) clearTimeout(duckTimer);
+  duckTimer = setTimeout(() => {
+    if (ambient.bus === bus && ctx) { try { bus.gain.setTargetAtTime(MUSIC_GAIN, ctx.currentTime, 0.6); } catch {} }
+  }, ms);
 }
 
 export function stopMelody() {

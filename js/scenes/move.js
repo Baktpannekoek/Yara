@@ -1,12 +1,13 @@
-/* Doe mee: een poppetje doet een beweging voor, het woord klinkt, en zij doet het na.
-   Imiteren is op anderhalf de manier van leren. Een tik op het poppetje kiest een willekeurige
-   beweging, de knopjes eronder kiezen er een bewust. */
+/* Doe mee: Yara's poppetje uit de bibliotheek doet een beweging voor, het woord klinkt, en zij doet
+   het na. Een tik op het poppetje kiest een willekeurige beweging, de knopjes eronder kiezen bewust. */
 
 import { MOVES } from '../words.js';
-import { moveSounds } from '../sounds-more.js';
-import * as more from '../art-more.js';
+import { simpleStage } from '../lib/scene.js';
+import { createFigure } from '../lib/rig.js';
+import * as A from '../lib/anim.js';
+import { PERSONEN } from '../lib/figures/persoon.js';
 
-const INK = '#3b4252';
+const INK = '#2f3542';
 const GLYPHS = {
   springen: `<svg viewBox="0 0 100 100"><path d="M50 84 V24 M26 46 L50 20 L74 46" fill="none" stroke="${INK}" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   klappen: `<svg viewBox="0 0 100 100"><ellipse cx="33" cy="56" rx="15" ry="24" fill="#ffd9b8" stroke="${INK}" stroke-width="2" transform="rotate(-18 33 56)"/><ellipse cx="67" cy="56" rx="15" ry="24" fill="#ffd9b8" stroke="${INK}" stroke-width="2" transform="rotate(18 67 56)"/><path d="M50 30 l-5 -9 M50 30 l5 -9 M50 26 v-10" stroke="#ffb84d" stroke-width="4" stroke-linecap="round"/></svg>`,
@@ -15,40 +16,40 @@ const GLYPHS = {
   rennen: `<svg viewBox="0 0 100 100"><path d="M18 50 H68 M52 30 L74 50 L52 70" fill="none" stroke="${INK}" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 32 h16 M6 68 h16" stroke="#8fcbea" stroke-width="5" stroke-linecap="round"/></svg>`,
   draaien: `<svg viewBox="0 0 100 100"><path d="M74 52 a24 24 0 1 1 -9 -19" fill="none" stroke="${INK}" stroke-width="11" stroke-linecap="round"/><path d="M60 18 l16 14 l-20 6z" fill="${INK}"/></svg>`
 };
+// Welke actie van het mensfiguur hoort bij welke beweging
+const ACTION = { springen: 'spring', klappen: 'klap', stampen: 'stamp', zwaaien: 'zwaai', rennen: 'dans', draaien: 'draai' };
 
 export default {
   id: 'move',
   mount(root, ctx) {
     root.innerHTML = `
       <div class="bg">${ctx.art.landscape()}</div>
-      <div class="move-figure" id="figure">${more.poppetje()}</div>
+      <div class="move-figure" id="figure"></div>
       <div class="move-buttons">
         ${MOVES.map((m) => `<div class="move-btn" data-move="${m.key}" aria-label="${m.name}">${GLYPHS[m.key]}</div>`).join('')}
       </div>`;
-
-    const figure = root.querySelector('#figure');
+    const stage = simpleStage(root);
+    const def = PERSONEN.yara;
+    const fig = createFigure(def, { zone: 'gras' });
+    root.querySelector('#figure').appendChild(fig.el);
+    def.idle(fig);
     let timers = [];
-    let busyUntil = 0;
     let lastMove = null;
     const later = (fn, ms) => timers.push(setTimeout(fn, ms));
 
     function doMove(m) {
-      const now = performance.now();
-      if (now < busyUntil) return;
-      busyUntil = now + 1100;
+      if (fig.busy) return;
       lastMove = m.key;
-      figure.className = 'move-figure';
-      void figure.offsetWidth;
-      figure.classList.add('do-' + m.anim);
-      later(() => figure.classList.remove('do-' + m.anim), 1000);
-      ctx.sound('fx-' + m.fx, moveSounds[m.fx]);
-      later(() => ctx.say(m.key, m.say), 150);
-      ctx.setHint(m.question);
       root.querySelectorAll('.move-btn').forEach((b) => b.classList.toggle('active', b.dataset.move === m.key));
+      ctx.setHint(m.question);
+      A.react(fig, async () => {
+        later(() => ctx.say(m.key, m.say), 100);
+        await def.actions[ACTION[m.key]](fig, ctx, stage);
+      });
     }
 
-    ctx.onTap(figure, () => {
-      // Een andere beweging dan de vorige, zodat het poppetje afwisselt
+    ctx.onTap(fig.el, (e) => {
+      e.stopPropagation();
       const keuze = MOVES.filter((m) => m.key !== lastMove);
       doMove(keuze[Math.floor(Math.random() * keuze.length)]);
     });
@@ -61,6 +62,6 @@ export default {
     });
 
     ctx.setHint('Tik op het poppetje en doe mee!');
-    this.unmount = () => { timers.forEach(clearTimeout); timers = []; };
+    this.unmount = () => { timers.forEach(clearTimeout); timers = []; fig.destroy(); stage.destroy(); };
   }
 };

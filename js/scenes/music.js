@@ -6,6 +6,11 @@
 import { INSTRUMENTS, SONGS } from '../words.js';
 import { instrumentSounds, playNote } from '../sounds-more.js';
 import * as more from '../art-more.js';
+import { simpleStage } from '../lib/scene.js';
+import { createFigure } from '../lib/rig.js';
+import * as A from '../lib/anim.js';
+import * as fx from '../lib/fx.js';
+import { PERSONEN } from '../lib/figures/persoon.js';
 
 const PADS = [
   { kind: 'circle', color: '#f28b82' },
@@ -45,6 +50,7 @@ export default {
   id: 'music',
   mount(root, ctx) {
     let playing = null;      // { key, source } van het liedje dat nu klinkt
+    let player = null, stage = null;
     let timers = [];
     const later = (fn, ms) => timers.push(setTimeout(fn, ms));
 
@@ -66,7 +72,7 @@ export default {
           ${inst ? `
             <div class="inst-strip">${INSTRUMENTS.map((it) => `<div class="inst-btn ${it.key === instrument ? 'active' : ''}" data-key="${it.key}">${instrumentArt(ctx, it.key)}</div>`).join('')}</div>
             <div class="inst-stage">
-              <div class="inst-player">${more.poppetje()}</div>
+              <div class="inst-player" id="player"></div>
               <div class="inst-big bob" id="inst-big">${instrumentArt(ctx, instrument)}</div>
             </div>
             <div class="key-row">${KEYS.map(([f, c], i) => `<div class="key" data-i="${i}" style="--c:${c}"></div>`).join('')}</div>
@@ -79,13 +85,29 @@ export default {
           <div class="mode-btn ${inst ? '' : 'active'}" data-mode="liedjes">${more.liedjeIcon()}</div>
         </div>`;
 
-      // Toetsen: klinken in de klank van het gekozen instrument
+      // Yara's poppetje speelt mee
+      if (player) { player.destroy(); player = null; }
+      const playerEl = root.querySelector('#player');
+      if (playerEl) {
+        stage = simpleStage(root);
+        player = createFigure(PERSONEN.yara, { zone: 'gras' });
+        playerEl.appendChild(player.el);
+        PERSONEN.yara.idle(player);
+      }
+
+      // Toetsen: klinken in de klank van het gekozen instrument; het poppetje beweegt mee
       root.querySelectorAll('.key').forEach((el) => {
         ctx.onTap(el, () => {
-          playNote(instrument, KEYS[Number(el.dataset.i)][0]);
+          const i = Number(el.dataset.i);
+          playNote(instrument, KEYS[i][0]);
           ctx.animate(el, 'anim-pop');
           const big = root.querySelector('#inst-big');
-          if (big) ctx.animate(big, Number(el.dataset.i) % 2 ? 'anim-wiggle' : 'anim-bounce');
+          if (big) ctx.animate(big, i % 2 ? 'anim-wiggle' : 'anim-bounce');
+          if (player && !player.busy) {
+            A.wiggle(player, i % 2 ? 'arm-r' : 'arm-l', i % 2 ? 40 : -40, 1, 260);
+            A.tween(player, player.svg, [{ transform: 'translateY(0)' }, { transform: 'translateY(-4px)' }, { transform: 'translateY(0)' }], { duration: 260 });
+            if (i % 3 === 0) { const c = stage.center(player, 0.5, 0.2); fx.notes(c.x, c.y, 2); }
+          }
         });
       });
 
@@ -150,6 +172,6 @@ export default {
     }
 
     build();
-    this.unmount = () => { stopSong(); timers.forEach(clearTimeout); timers = []; };
+    this.unmount = () => { stopSong(); timers.forEach(clearTimeout); timers = []; if (player) { player.destroy(); player = null; } };
   }
 };

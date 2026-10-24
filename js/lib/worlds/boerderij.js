@@ -2,53 +2,7 @@
    Staand (100 x 150) en liggend (200 x 100) hebben elk hun eigen indeling, zodat de vijver,
    het spoor en het hek altijd op een logische plek staan. */
 
-import { INK } from '../style.js';
-
-const tree = (x, y, s = 1, dark = false) => `
-  <g class="tree" style="transform-origin:${x}px ${y + 16 * s}px">
-    <rect x="${x - 2.5 * s}" y="${y + 2 * s}" width="${5 * s}" height="${14 * s}" rx="2" fill="#8a5a3b"/>
-    <circle cx="${x}" cy="${y - 2 * s}" r="${10 * s}" fill="${dark ? '#6fbe63' : '#8fd27a'}"/>
-    <circle cx="${x - 7 * s}" cy="${y + 2 * s}" r="${7 * s}" fill="${dark ? '#6fbe63' : '#8fd27a'}"/>
-    <circle cx="${x + 7 * s}" cy="${y + 2 * s}" r="${7 * s}" fill="${dark ? '#6fbe63' : '#8fd27a'}"/>
-    <circle cx="${x - 3 * s}" cy="${y - 6 * s}" r="${4 * s}" fill="#a8e096" opacity=".7"/>
-  </g>`;
-const bush = (x, y, s = 1) => `<g><circle cx="${x}" cy="${y}" r="${6 * s}" fill="#a7d98f"/><circle cx="${x - 5 * s}" cy="${y + 2 * s}" r="${4.5 * s}" fill="#a7d98f"/><circle cx="${x + 5 * s}" cy="${y + 2 * s}" r="${4.5 * s}" fill="#9bd784"/></g>`;
-const flower = (x, y, c) => `<g class="flower" style="transform-origin:${x}px ${y + 4}px"><path d="M${x} ${y} v4" stroke="#5fae57" stroke-width="1.2"/><circle cx="${x}" cy="${y}" r="2.4" fill="${c}"/><circle cx="${x}" cy="${y}" r="1" fill="#fff4dc"/></g>`;
-const fence = (x0, x1, y, step = 14) => {
-  let s = `<path d="M${x0} ${y - 6} H${x1}" stroke="#c58a52" stroke-width="2.2"/><path d="M${x0} ${y - 1} H${x1}" stroke="#c58a52" stroke-width="2.2"/>`;
-  for (let x = x0; x <= x1; x += step) s += `<rect x="${x - 1.5}" y="${y - 10}" width="3" height="13" rx="1.5" fill="#d9a066" stroke="#a9733f" stroke-width=".8"/>`;
-  return s;
-};
-const barn = (x, y, s = 1) => `
-  <g transform="translate(${x} ${y}) scale(${s})">
-    <path d="M0 16 L20 2 L40 16 V40 H0z" fill="#f0766a"/><path d="M0 16 L20 2 L40 16" fill="none" stroke="${INK}" stroke-width="2.2"/>
-    <path d="M0 40 H40" stroke="#c45b52" stroke-width="2"/>
-    <rect x="13" y="22" width="14" height="18" fill="#7d5236"/><path d="M13 22 L27 40 M27 22 L13 40" stroke="#fff4dc" stroke-width="1.5"/>
-    <circle cx="20" cy="12" r="3.5" fill="#fff4dc" stroke="${INK}" stroke-width="1.5"/>
-  </g>`;
-const pond = (cx, cy, rx, ry) => `
-  <ellipse cx="${cx}" cy="${cy}" rx="${rx + 3}" ry="${ry + 1.5}" fill="#ecd8a8"/>
-  <ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#8fcbea"/>
-  <ellipse cx="${cx - rx * 0.3}" cy="${cy - ry * 0.2}" rx="${rx * 0.35}" ry="${ry * 0.3}" fill="#a9d8f0"/>
-  <g class="ripple-still"><path d="M${cx - rx * 0.5} ${cy + ry * 0.4} q${rx * 0.2} -1.5 ${rx * 0.4} 0" fill="none" stroke="#fff" stroke-width="1" opacity=".8"/><path d="M${cx + rx * 0.1} ${cy - ry * 0.3} q${rx * 0.2} -1.5 ${rx * 0.4} 0" fill="none" stroke="#fff" stroke-width="1" opacity=".8"/></g>
-  <ellipse cx="${cx + rx * 0.6}" cy="${cy + ry * 0.5}" rx="3" ry="1.4" fill="#6fbe63"/>`;
-const track = (x0, x1, y) => {
-  let s = `<path d="M${x0} ${y - 3} H${x1}" stroke="#aeb2c0" stroke-width="1.2"/><path d="M${x0} ${y} H${x1}" stroke="#aeb2c0" stroke-width="1.2"/>`;
-  for (let x = x0; x <= x1; x += 5) s += `<rect x="${x}" y="${y - 4.5}" width="2.2" height="6" fill="#a9733f"/>`;
-  return `<g>${s.split('<path').length ? s : s}</g>`.replace(/<rect[^>]*>/g, (m) => m) ;
-};
-const sky = (w, h) => `
-  <defs><linearGradient id="bsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fd4f3"/><stop offset="1" stop-color="#dff1fb"/></linearGradient></defs>
-  <rect width="${w}" height="${h}" fill="url(#bsky)"/>
-  <g class="sun-glow"><circle cx="${w * 0.84}" cy="${h * 0.14}" r="${w * 0.07}" fill="#ffe08a" opacity=".5"/><circle cx="${w * 0.84}" cy="${h * 0.14}" r="${w * 0.05}" fill="#ffd45c"/></g>
-  <g class="clouds" fill="#fff" opacity=".9">
-    <ellipse cx="${w * 0.2}" cy="${h * 0.16}" rx="${w * 0.07}" ry="${w * 0.028}"/><ellipse cx="${w * 0.24}" cy="${h * 0.13}" rx="${w * 0.045}" ry="${w * 0.03}"/>
-    <ellipse cx="${w * 0.58}" cy="${h * 0.1}" rx="${w * 0.06}" ry="${w * 0.024}"/><ellipse cx="${w * 0.62}" cy="${h * 0.08}" rx="${w * 0.035}" ry="${w * 0.025}"/>
-  </g>`;
-
-function svg(w, h, inner) {
-  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
-}
+import { svg, sky, tree, bush, flower, fence, barn, pond, track } from './parts.js';
 
 /* ---------- Liggend: 200 x 100 ---------- */
 function landscapeLayers() {
@@ -105,16 +59,16 @@ function portraitLayers() {
 }
 const portraitSpots = [
   { id: 'trein',  x: 34, y: 93,  zone: 'spoor', size: 26 },
-  { id: 'vogel',  x: 86, y: 78,  zone: 'lucht', size: 9 },
-  { id: 'schaap', x: 12, y: 108, zone: 'gras',  size: 17 },
+  { id: 'vogel',  x: 76, y: 78,  zone: 'lucht', size: 9 },
+  { id: 'schaap', x: 25, y: 108, zone: 'gras',  size: 17 },
   { id: 'kip',    x: 40, y: 110, zone: 'gras',  size: 13 },
   { id: 'eend',   x: 70, y: 116, zone: 'water', size: 13 },
-  { id: 'kat',    x: 92, y: 120, zone: 'gras',  size: 13 },
+  { id: 'kat',    x: 77, y: 120, zone: 'gras',  size: 13 },
   { id: 'kikker', x: 50, y: 124, zone: 'gras',  size: 10 },
-  { id: 'koe',    x: 24, y: 142, zone: 'gras',  size: 27 },
+  { id: 'koe',    x: 28, y: 142, zone: 'gras',  size: 27 },
   { id: 'varken', x: 54, y: 146, zone: 'gras',  size: 19 },
-  { id: 'hond',   x: 78, y: 140, zone: 'gras',  size: 18 },
-  { id: 'paard',  x: 92, y: 150, zone: 'gras',  size: 24 }
+  { id: 'hond',   x: 74, y: 138, zone: 'gras',  size: 18 },
+  { id: 'paard',  x: 72, y: 150, zone: 'gras',  size: 24 }
 ];
 
 export const boerderij = {

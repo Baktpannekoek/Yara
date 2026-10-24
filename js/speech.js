@@ -99,6 +99,7 @@ export function playRecording(key) {
 
 /* Spreek een woord uit. Opname heeft voorrang. */
 export function say(key, text) {
+  audio.duckAmbient(1800);
   if (buffers.has(key)) { playRecording(key); return 'opname'; }
   return speak(text) ? 'stem' : 'stil';
 }
@@ -106,6 +107,7 @@ export function say(key, text) {
 /* Speel een geluid: opname van de ouder, anders de echte opname uit sounds/, anders synthetisch.
    Sleutels als 'geluid-koe' of 'fx-klap' horen bij de bestanden koe.wav en klap.wav. */
 export function sound(key, fallback) {
+  audio.duckAmbient(1500);
   if (buffers.has(key)) { playRecording(key); return 'opname'; }
   const base = String(key).replace(/^(geluid|fx)-/, '');
   if (real.play(base)) return 'echt';

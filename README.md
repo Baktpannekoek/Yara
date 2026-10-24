@@ -71,9 +71,11 @@ Kort en samen is het advies van het Nederlands Jeugdinstituut voor kinderen onde
 
 De dieren, voertuigen en gekke geluidjes zijn echte opnames van Wikimedia Commons, ingekort voor de app. De bronnen en licenties staan in [sounds/CREDITS.md](sounds/CREDITS.md). Jullie eigen opname gaat altijd voor, en als een geluid nog niet geladen is klinkt een getekende versie.
 
-## Bibliotheek (fase 1)
+De achtergrondmuziek bestaat uit echte deuntjes met meerdere instrumenten van Kevin MacLeod, elk plekje heeft zijn eigen nummer. De muziek speelt zacht onder de stemmen en wordt nog zachter zodra er iemand praat of een dier iets zegt. Uitzetten kan in het oudermenu. De titels en de licentie staan in [music/CREDITS.md](music/CREDITS.md).
 
-In `js/lib/` groeit een eigen figuur- en animatiebibliotheek: figuren uit losse delen met draaipunten (`style.js`, `rig.js`), een animatiemotor met rustloops en tikreacties (`anim.js`), effecten als stoom, stof en spetters (`fx.js`) en werelden met lagen en vaste plekken (`scene.js`, `worlds/`). De boerderij in de speelwei is de eerste wereld op deze bibliotheek, met de koe, de eend en de trein als eerste volledig uitgewerkte figuren. Het plan staat in PLAN-animaties.md.
+## Bibliotheek
+
+In `js/lib/` zit een eigen figuur- en animatiebibliotheek: figuren uit losse delen met draaipunten (`style.js`, `rig.js`), een animatiemotor met rustloops en tikreacties (`anim.js`), effecten als stoom, stof en spetters (`fx.js`) en werelden met lagen, diepte en vaste plekken (`scene.js`, `worlds/`). Alle figuren staan in `js/lib/figures/`: tien boerderijdieren, zes wilde dieren, acht voertuigen en de mensen (mama, papa, opa, oma, baby, kindje en het kind zelf). Elk figuur heeft een rustige rustanimatie en twee tikreacties die elkaar afwisselen. De speelwei, kiekeboe, doe mee en de muziekhoek gebruiken deze bibliotheek. Hoe je een nieuw figuur maakt staat in `js/lib/figures/HANDLEIDING.md`, het plan erachter in PLAN-animaties.md.
 
 ## Zelf aanpassen
 
