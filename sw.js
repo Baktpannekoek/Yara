@@ -1,6 +1,6 @@
 /* Service worker: alles in de cache zodat de app offline werkt.
    Verhoog VERSION bij elke wijziging, dan haalt de app de nieuwe bestanden op. */
-const VERSION = 'yara-v15';
+const VERSION = 'yara-v16';
 const FILES = [
   './',
   './index.html',
@@ -20,6 +20,16 @@ const FILES = [
   './js/art-more.js',
   './js/sounds-more.js',
   './js/sounds-extra-bundel.js',
+  './js/lib/style.js',
+  './js/lib/rig.js',
+  './js/lib/anim.js',
+  './js/lib/fx.js',
+  './js/lib/scene.js',
+  './js/lib/worlds/boerderij.js',
+  './js/lib/figures/index.js',
+  './js/lib/figures/koe.js',
+  './js/lib/figures/eend.js',
+  './js/lib/figures/trein.js',
   './js/scenes/start.js',
   './js/scenes/world.js',
   './js/scenes/kiekeboe.js',

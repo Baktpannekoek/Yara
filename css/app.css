@@ -654,3 +654,25 @@ svg { display: block; overflow: visible; }
 .farm-animal.show.trick-shake { animation: trick-shake 800ms ease-in-out; }
 .farm-animal.show.trick-wiggle { animation: trick-wiggle 900ms ease-in-out; }
 .farm-animal.show.trick-peek { animation: trick-peek 900ms ease-in-out; }
+
+
+/* ---------- Bibliotheek: wereld, figuren, effecten ---------- */
+.world-root { position: absolute; inset: 0; }
+.world { position: absolute; inset: 0; overflow: hidden; }
+.world-layer { position: absolute; inset: 0; pointer-events: none; }
+.world-layer svg { width: 100%; height: 100%; display: block; }
+.world-field { position: absolute; inset: 0; }
+.world-fx { position: absolute; inset: 0; pointer-events: none; z-index: 500; }
+.fig.placed { position: absolute; transform: translate(-50%, -100%); }
+.fig.placed.flip { transform: translate(-50%, -100%) scaleX(-1); }
+.fig svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.fx { position: absolute; pointer-events: none; }
+.fx svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.world .tree { animation: tree-sway 5s ease-in-out infinite; }
+.world .tree:nth-child(2n) { animation-duration: 6.5s; animation-delay: -2s; }
+@keyframes tree-sway { 0%,100% { transform: rotate(-1.2deg); } 50% { transform: rotate(1.2deg); } }
+.world .flower { animation: flower-nod 3.4s ease-in-out infinite; }
+.world .flower:nth-child(2n) { animation-delay: -1.5s; }
+@keyframes flower-nod { 0%,100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+.world .clouds { animation: clouds-drift 70s linear infinite; }
+.world .sun-glow { animation: breathe 4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }

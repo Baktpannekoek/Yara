@@ -71,6 +71,10 @@ Kort en samen is het advies van het Nederlands Jeugdinstituut voor kinderen onde
 
 De dieren, voertuigen en gekke geluidjes zijn echte opnames van Wikimedia Commons, ingekort voor de app. De bronnen en licenties staan in [sounds/CREDITS.md](sounds/CREDITS.md). Jullie eigen opname gaat altijd voor, en als een geluid nog niet geladen is klinkt een getekende versie.
 
+## Bibliotheek (fase 1)
+
+In `js/lib/` groeit een eigen figuur- en animatiebibliotheek: figuren uit losse delen met draaipunten (`style.js`, `rig.js`), een animatiemotor met rustloops en tikreacties (`anim.js`), effecten als stoom, stof en spetters (`fx.js`) en werelden met lagen en vaste plekken (`scene.js`, `worlds/`). De boerderij in de speelwei is de eerste wereld op deze bibliotheek, met de koe, de eend en de trein als eerste volledig uitgewerkte figuren. Het plan staat in PLAN-animaties.md.
+
 ## Zelf aanpassen
 
 Alles is gewone HTML, CSS en JavaScript zonder bouwstap. Woorden en dieren staan in `js/words.js`, de tekeningen in `js/art.js`, de geluiden in `js/audio.js`. Verhoog na een wijziging het versienummer bovenin `sw.js`, dan haalt de app de nieuwe bestanden op.

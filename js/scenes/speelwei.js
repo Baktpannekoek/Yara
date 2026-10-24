@@ -7,6 +7,12 @@ import { extraSounds, funSounds, moveSounds } from '../sounds-extra-bundel.js';
 import * as extra from '../art-extra.js';
 import * as more from '../art-more.js';
 import { PEOPLE } from '../words.js';
+import { mountWorld } from '../lib/scene.js';
+import { createFigure } from '../lib/rig.js';
+import * as A from '../lib/anim.js';
+import * as fx from '../lib/fx.js';
+import { boerderij } from '../lib/worlds/boerderij.js';
+import { figureDef } from '../lib/figures/index.js';
 
 const ORDER = ['farm', 'wild', 'vehicles', 'people'];
 const ICONS = { farm: (art) => art.barnIcon(), wild: () => extra.wildIcon(), vehicles: () => extra.vehicleIcon(), people: () => more.doeMeeIcon() };
@@ -204,23 +210,32 @@ export default {
       }
     }
 
-    function build() {
-      const set = SETS[currentSet];
-      timers.forEach(clearTimeout); timers = [];
-      const n = set.items.length;
-      const backCount = Math.floor(n / 2);
-      const back = set.items.slice(0, backCount);
-      const front = set.items.slice(backCount);
-      const fig = (it, i) => `<div class="wei-figure ${IDLE[i % IDLE.length]} ${currentSet === 'vehicles' ? 'vehicle' : ''} ${currentSet === 'people' ? 'person' : ''}" data-key="${it.key}" style="animation-delay:${(i * 0.37 % 2).toFixed(2)}s" aria-label="${it.name}">${figureArt(ctx, it.key, currentSet)}</div>`;
-      root.innerHTML = `
-        <div class="bg">${sceneArt(currentSet)}</div>
-        <div class="wei-top">
+    let world = null;
+
+    /* Figuren die nog niet in de bibliotheek staan, krijgen een eenvoudige rig om de oude tekening */
+    function legacyDef(item) {
+      return {
+        key: item.key,
+        svg: () => standing(ctx, item.key),
+        idle(fig) { A.bobLoop(fig, fig.svg, 1.5, 2400 + Math.random() * 800); },
+        async react(fig, c, tap, w) {
+          const pt = w.center(fig, 0.5, 0.95);
+          c.sound('geluid-' + item.key, sounds[item.key] || c.audio.tap);
+          await A.hop(fig, 12, 600);
+          fx.dust(pt.x, pt.y, 5);
+          fig.later(() => c.say(item.key, item.name), 150);
+          c.setHint(item.question);
+        }
+      };
+    }
+
+    function topBar() {
+      return `<div class="wei-top">
           ${ORDER.map((k) => `<div class="set-btn ${k === currentSet ? 'active' : ''}" data-set="${k}" aria-label="${SETS[k].title}">${ICONS[k](ctx.art)}</div>`).join('')}
-        </div>
-        <div class="wei-stage">
-          <div class="wei-row back" style="--per-row:${Math.max(back.length, 1)}">${back.map((it, i) => fig(it, i)).join('')}</div>
-          <div class="wei-row front" style="--per-row:${Math.max(front.length, 1)}">${front.map((it, i) => fig(it, i + backCount)).join('')}</div>
         </div>`;
+    }
+
+    function wireTop() {
       root.querySelectorAll('.set-btn').forEach((b) => ctx.onTap(b, (e) => {
         e.stopPropagation();
         if (b.dataset.set === currentSet) { ctx.animate(b, 'anim-wiggle'); return; }
@@ -228,6 +243,49 @@ export default {
         ctx.audio.tap();
         build();
       }));
+    }
+
+    /* De boerderij op de bibliotheek: wereld met lagen en plekken, figuren uit delen */
+    function buildWorld(set) {
+      root.innerHTML = `<div class="world-root"></div>${topBar()}`;
+      world = mountWorld(root.querySelector('.world-root'), boerderij, ctx);
+      [...set.items, ...(boerderij.extras || [])].forEach((item) => {
+        const spot = world.spot(item.key);
+        if (!spot) return;
+        const def = figureDef(item.key) || legacyDef(item);
+        const fig = createFigure(def, { zone: spot.zone });
+        world.place(fig, spot);
+        try { def.idle(fig); } catch (e) { console.warn(e); }
+        ctx.onTap(fig.el, (e) => {
+          e.stopPropagation();
+          const r = fig.el.getBoundingClientRect();
+          const tap = { x: (e.clientX - r.left) / r.width - 0.5, y: (e.clientY - r.top) / r.height - 0.5 };
+          const ok = A.react(fig, () => def.react(fig, ctx, tap, world));
+          if (ok) ctx.setHint(item.question);
+        });
+      });
+      wireTop();
+      ctx.setHint(`${set.title}: tik op een dier`);
+    }
+
+    function build() {
+      const set = SETS[currentSet];
+      timers.forEach(clearTimeout); timers = [];
+      if (world) { world.destroy(); world = null; }
+      if (currentSet === 'farm') { buildWorld(set); return; }
+      const n = set.items.length;
+      const backCount = Math.floor(n / 2);
+      const back = set.items.slice(0, backCount);
+      const front = set.items.slice(backCount);
+      const fig = (it, i) => `<div class="wei-figure ${IDLE[i % IDLE.length]} ${currentSet === 'vehicles' ? 'vehicle' : ''} ${currentSet === 'people' ? 'person' : ''}" data-key="${it.key}" style="animation-delay:${(i * 0.37 % 2).toFixed(2)}s" aria-label="${it.name}">${figureArt(ctx, it.key, currentSet)}</div>`;
+      root.innerHTML = `
+        <div class="bg">${sceneArt(currentSet)}</div>
+        ${topBar()}
+        <div class="wei-stage">
+          <div class="wei-row back" style="--per-row:${Math.max(back.length, 1)}">${back.map((it, i) => fig(it, i)).join('')}</div>
+          <div class="wei-row front" style="--per-row:${Math.max(front.length, 1)}">${front.map((it, i) => fig(it, i + backCount)).join('')}</div>
+        </div>`;
+      wireTop();
       root.querySelectorAll('.wei-figure').forEach((el) => {
         const item = set.items.find((i) => i.key === el.dataset.key);
         ctx.onTap(el, (e) => { e.stopPropagation(); poke(el, item); });
@@ -237,6 +295,6 @@ export default {
 
     ctx.onTap(root, () => ctx.audio.tap());
     build();
-    this.unmount = () => { timers.forEach(clearTimeout); timers = []; };
+    this.unmount = () => { timers.forEach(clearTimeout); timers = []; if (world) { world.destroy(); world = null; } };
   }
 };
